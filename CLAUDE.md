@@ -1,0 +1,58 @@
+# Constelaciones
+
+Reto de Instagram de 365 días: cada persona que comenta en el video del día se convierte en una
+estrella con su @usuario; cada 300 estrellas nuevas forman una constelación. La página pública
+muestra el cielo (mapa 2D con PixiJS, vista 3D con three.js) y permite buscar tu estrella. Un panel
+privado permite a la dueña manejar el reto.
+
+@AGENTS.md
+
+## Documentos (leer antes de trabajar)
+
+- [docs/constelaciones.md](docs/constelaciones.md) — producto, reglas y tecnologías. Manda ante dudas de reglas.
+- [docs/constelaciones-diseno.md](docs/constelaciones-diseno.md) — diseño visual, mapa, Sol, planetas, zoom y 3D.
+- [docs/constelaciones-diseno.html](docs/constelaciones-diseno.html) — prototipo visual de referencia.
+- [docs/constelaciones-implementacion.md](docs/constelaciones-implementacion.md) — plan por fases.
+- [PROGRESO.md](PROGRESO.md) — qué fase sigue y qué está hecho.
+
+## Reglas de trabajo
+
+- **Una fase a la vez.** Al empezar, leer `PROGRESO.md` para saber cuál sigue. Nunca adelantar trabajo de fases futuras.
+- Al terminar una fase:
+  1. Marcar sus tareas con `[x]` en `PROGRESO.md` y escribir un resumen corto.
+  2. Verificar los criterios de aceptación (pruebas, compilación, revisión visual cuando aplique).
+  3. Commit con el mensaje `Fase N: <nombre>`.
+  4. Explicar a la dueña, en español sencillo: qué quedó listo, cómo verlo y qué necesita hacer ella.
+  5. Detenerse y esperar "siguiente".
+- Si una tarea necesita algo que solo la dueña puede dar (cuentas, claves, decisiones), preguntar y esperar. No inventar valores.
+- Nunca subir claves al repositorio. Van en `.env.local` (ignorado por git); `.env.example` lleva solo los nombres.
+- Si algo del plan es imposible o hay una forma claramente mejor, explicarlo antes de cambiarlo.
+- Interfaz en español. Código, nombres de archivos y variables en inglés.
+- Respetar el diseño: tokens de color y tipografías de `src/app/globals.css` (copiados del documento de diseño), sin emojis. El oro (`--gold`) es el único acento.
+- Dependencias con versiones exactas (`npm install --save-exact`).
+
+## Estructura
+
+```
+docs/                  documentos del proyecto
+supabase/migrations    SQL versionado
+supabase/seed          figuras de constelaciones, palabras bloqueadas
+src/app                páginas (público, /admin, /api)
+src/sky                lógica pura del cielo (sin dependencias de UI)
+src/map                mapa 2D con PixiJS
+src/viewer3d           vista 3D con three.js
+src/components         interfaz (buscador, tarjeta, paneles)
+src/server             acceso a Supabase, Instagram, generación de archivos
+scripts                generadores de datos de prueba, cargas masivas
+tests/unit             pruebas de lógica (Vitest)
+tests/e2e              pruebas de pantallas (Playwright)
+```
+
+## Comandos
+
+- `npm run dev` — servidor local en http://localhost:3000
+- `npm run build` — compilación de producción
+- `npm run lint` — ESLint
+- `npm run format` / `npm run format:check` — Prettier
+- `npm test` — pruebas unitarias (Vitest)
+- `npm run test:e2e` — pruebas de pantallas (Playwright, escritorio y celular). La primera vez: `npx playwright install chromium`

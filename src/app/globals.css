@@ -1,0 +1,65 @@
+/* Design tokens from docs/constelaciones-diseno.md (section 1) and the HTML prototype. */
+:root {
+  --sky: #050813;
+  --sky-2: #0b1326;
+  --panel: rgba(10, 15, 30, 0.8);
+  --panel-blur: 14px;
+  --panel-solid: #0b1122;
+  --line: rgba(190, 202, 230, 0.14);
+  --line-2: rgba(190, 202, 230, 0.26);
+  --ink: #eceff6;
+  --ink-2: #a3adc4;
+  --ink-3: #6d7892;
+  --gold: #e8cb8f;
+  --gold-soft: rgba(232, 203, 143, 0.16);
+  --gold-ink: #1a1408;
+  --blue: #9dc3ff;
+
+  --display: var(--font-display), "Iowan Old Style", Georgia, serif;
+  --body: var(--font-body), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--sky);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
