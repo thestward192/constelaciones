@@ -69,6 +69,17 @@ export interface Insets {
 
 const MAX_VISIBLE_CONSTELLATIONS = 320;
 
+/**
+ * Lets the browser handle input and paint between the heavy steps of starting the map, so no
+ * single task blocks the page for long (this keeps the page responsive on slow phones).
+ */
+const yieldToMain = () =>
+  new Promise<void>((resolve) => {
+    const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+    if (scheduler?.yield) scheduler.yield().then(resolve);
+    else setTimeout(resolve, 0);
+  });
+
 /** The 2D sky: PixiJS scene, camera, gestures, on-demand data and every layer. */
 export class SkyMap {
   private app = new Application();
@@ -127,6 +138,7 @@ export class SkyMap {
       powerPreference: "high-performance",
     });
     if (this.destroyed) return;
+    await yieldToMain();
     const canvas = this.app.canvas;
     canvas.tabIndex = 0;
     canvas.setAttribute(
@@ -139,6 +151,8 @@ export class SkyMap {
     this.host.appendChild(canvas);
 
     const atlas = buildAtlas();
+    await yieldToMain();
+    if (this.destroyed) return;
     this.layers = {
       backdrop: new Backdrop(atlas),
       overview: new OverviewLayer(),
@@ -192,6 +206,7 @@ export class SkyMap {
     }
 
     this.app.ticker.add((ticker) => this.tick(ticker.deltaMS));
+    await yieldToMain();
     await this.loadData();
   }
 
@@ -209,12 +224,18 @@ export class SkyMap {
         },
       });
       const l = this.layers;
-      l.solar.setData(data);
-      l.region.setData(data);
-      l.backdrop.setData(data);
-      l.effects.setData(data);
-      this.minimap?.setData(data);
-      l.overview.setData(data);
+      for (const step of [
+        () => l.solar.setData(data),
+        () => l.region.setData(data),
+        () => l.backdrop.setData(data),
+        () => l.effects.setData(data),
+        () => this.minimap?.setData(data),
+        () => l.overview.setData(data),
+      ]) {
+        step();
+        await yieldToMain();
+        if (this.destroyed) return;
+      }
       this.cam = this.initialCamera(data);
       this.options.onReady?.(data, this);
     } catch (error) {

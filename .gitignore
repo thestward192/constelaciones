@@ -52,3 +52,4 @@ next-env.d.ts
 
 # fake sky files for map development (npm run fake-sky)
 /public/dev-sky/
+/.cache

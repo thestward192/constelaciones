@@ -16,11 +16,13 @@
     "test:remote": "vitest run --project remote",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "cron:schedule": "tsx scripts/schedule-hourly.ts",
+    "load-test": "tsx scripts/load-test.ts",
     "render:spiral": "tsx scripts/render-spiral.ts",
     "fake-data": "tsx scripts/generate-fake-data.ts",
     "fake-sky": "tsx scripts/generate-fake-sky.ts",
     "measure:map": "tsx scripts/measure-map.ts",
-    "measure:viewer": "tsx scripts/measure-viewer.ts"
+    "measure:viewer": "tsx scripts/measure-viewer.ts",
+    "measure:visit": "tsx scripts/measure-visit.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
@@ -41,9 +43,11 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@types/three": "0.187.0",
+    "embedded-postgres": "17.10.0-beta.17",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.3",
     "eslint-config-prettier": "10.1.8",
+    "lighthouse": "13.5.0",
     "pg": "8.23.1",
     "prettier": "3.9.10",
     "tsx": "4.23.15",

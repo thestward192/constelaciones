@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 12 — Rendimiento y pruebas de carga
+**Siguiente fase:** Fase 13 — Lanzamiento
 
 ## Fase 0 — Preparación del proyecto
 
@@ -150,10 +150,21 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 **Nota:** el brillo dorado de 24 horas del documento de producto no se agregó; el borde dorado permanente sí. Se puede sumar más adelante si lo quieres.
 
+## Fase 12 — Rendimiento y pruebas de carga
+
+- [x] Cargar 3.000.000 de estrellas falsas en una base de prueba.
+- [x] Medir: búsqueda < 150 ms; procesamiento de 50.000 comentarios < 2 minutos; generación de archivos < 2 minutos.
+- [x] Lighthouse en celular: rendimiento ≥ 85 en la página pública.
+- [x] Medir el peso total descargado por una visita típica (entrar, buscar, abrir 3D) y estimar la transferencia mensual con 100.000 visitas.
+- [x] Documentar resultados en `docs/rendimiento.md`.
+
+**Resumen:** Copia local con Postgres 17 (`embedded-postgres`, solo desarrollo) y 3.000.000 de estrellas (2,4 GB), usando el código real de importación, procesamiento y publicación (`npm run load-test`); las llamadas REST las responde un adaptador local en vez de PostgREST (Docker Desktop no arrancó en este equipo y no se ejecutan binarios descargados). Resultados: búsqueda p95 67 ms; 50.000 comentarios procesados en 45 s (tanda más lenta 4,1 s); todo el cielo publicado en 41 s y un día normal en 5 s; Lighthouse 85 (cielo real) y 86 (3 millones); visita típica 0,8 MB hoy y 1,3 MB con 3 millones (unos 69 GB al mes de Supabase y 60 GB de Vercel con 100.000 visitas). Correcciones: búsqueda con prefijos cortos de 380 ms a 2 ms (migración `20261107000001_search_speed.sql`, ya aplicada en Supabase: la búsqueda real bajó de 373 a 119 ms, casi todo red); la página pública dejó de cargar supabase-js (61 KB menos) y el mapa arranca en pasos cortos (Lighthouse de 81 a 85). Riesgos y plan en `docs/rendimiento.md` (tamaño de máquina de Supabase al superar 1 millón de estrellas).
+
 ## Notas para el lanzamiento
 
 - Agregar `https://<dominio>/admin/auth/callback` a las Redirect URLs de Supabase Auth.
 - Definir `NEXT_PUBLIC_SITE_URL` con el dominio para las vistas previas al compartir.
 - Borrar los datos de prueba (`prueba_*`) antes de lanzar (fase 13).
 - La clave `service_role` y la contraseña de la base de datos se compartieron en un chat: cambiarlas antes de lanzar (Supabase > Project Settings > API Keys y Database).
+- Pasar Supabase a Pro al lanzar (el plan gratis no alcanza la transferencia esperada, ver `docs/rendimiento.md`); máquina Small o más al superar 1 millón de estrellas.
 - Programar la tarea de cada hora con el dominio: `npm run cron:schedule -- --url https://<dominio>` (Supabase pg_cron; el plan gratis de Vercel solo permite tareas diarias).
