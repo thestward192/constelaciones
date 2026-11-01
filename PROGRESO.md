@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 5 — Mapa 2D
+**Siguiente fase:** Fase 6 — Interfaz pública
 
 ## Fase 0 — Preparación del proyecto
 
@@ -62,17 +62,19 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 5 — Mapa 2D
 
-- [ ] Lienzo PixiJS a pantalla completa con cámara (posición y zoom).
-- [ ] Gestos: arrastrar con inercia, rueda con zoom hacia el cursor, pellizco, doble toque.
-- [ ] Zoom de 0,001x a 20x con niveles: Universo, Región, Constelación, Estrella, Nombre (tabla del documento de diseño), con fundidos entre niveles.
-- [ ] Carga por demanda: solo se descargan archivos de constelaciones visibles en zoom Constelación o más cerca; caché en memoria con límite (descartar las más lejanas).
-- [ ] Estrellas con texturas de brillo por nivel (como el prototipo), parpadeo, anillos, estela, borde dorado.
-- [ ] Líneas de constelación (doradas la de hoy), nombres debajo, revelación animada de la constelación de hoy.
-- [ ] El Sol en el centro (animado) y los planetas en órbita; planetas bloqueados con órbita punteada y su meta.
-- [ ] Estrellas fugaces del día cruzando la pantalla con el nombre.
-- [ ] Desbloqueos de retos dibujados en el cielo (aurora, cometa, luna, lluvia, nebulosa).
-- [ ] Minimapa con el Sol, órbitas y recuadro de la vista.
-- [ ] Respeto a "reducir movimiento".
+- [x] Lienzo PixiJS a pantalla completa con cámara (posición y zoom).
+- [x] Gestos: arrastrar con inercia, rueda con zoom hacia el cursor, pellizco, doble toque.
+- [x] Zoom de 0,001x a 20x con niveles: Universo, Región, Constelación, Estrella, Nombre (tabla del documento de diseño), con fundidos entre niveles.
+- [x] Carga por demanda: solo se descargan archivos de constelaciones visibles en zoom Constelación o más cerca; caché en memoria con límite (descartar las más lejanas).
+- [x] Estrellas con texturas de brillo por nivel (como el prototipo), parpadeo, anillos, estela, borde dorado.
+- [x] Líneas de constelación (doradas la de hoy), nombres debajo, revelación animada de la constelación de hoy.
+- [x] El Sol en el centro (animado) y los planetas en órbita; planetas bloqueados con órbita punteada y su meta.
+- [x] Estrellas fugaces del día cruzando la pantalla con el nombre.
+- [x] Desbloqueos de retos dibujados en el cielo (aurora, cometa, luna, lluvia, nebulosa).
+- [x] Minimapa con el Sol, órbitas y recuadro de la vista.
+- [x] Respeto a "reducir movimiento".
+
+**Resumen:** Mapa en `src/map` con PixiJS 8.22: cámara y vuelos (`camera.ts`), niveles de zoom con fundidos (`zoom-levels.ts`: Universo < 0,03 ≤ Región < 0,2 ≤ Constelación < 0,9 ≤ Estrella < 2,5 ≤ Nombre), datos por demanda con caché limitada (`sky-data.ts`), gestos (`input.ts`), minimapa (`minimap.ts`) y capas en `src/map/layers`. Las estrellas son partículas de un solo atlas (un dibujo por cuadro); solo están en pantalla las constelaciones visibles. Los nombres se ocultan cuando chocarían, priorizando las estrellas más brillantes. Los desbloqueos se anclan a la última constelación completada ese día (las de un mismo día quedan repartidas por toda la espiral). La imagen de la espiral se descarga solo al llegar al zoom lejano. Cielo falso de prueba: `npm run fake-sky` (10.000 constelaciones, 2.999.887 estrellas en `public/dev-sky`, abrir con `?sky=/dev-sky`). Medición (`npm run measure:map`, Chromium con tamaño de Pixel 7, procesador frenado 4x, versión de producción, GPU real): 60 cuadros por segundo moviéndose en zoom Constelación (58 con freno 6x); carga inicial 594 KB. Pendiente de confirmar en un celular físico de gama media (fase 12). 22 pruebas nuevas (172 en total).
 
 ## Fase 6 — Interfaz pública
 

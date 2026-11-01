@@ -49,3 +49,6 @@ next-env.d.ts
 
 # script output (renders for review)
 /scripts/output/
+
+# fake sky files for map development (npm run fake-sky)
+/public/dev-sky/

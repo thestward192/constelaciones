@@ -16,11 +16,14 @@
     "test:remote": "vitest run --project remote",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "render:spiral": "tsx scripts/render-spiral.ts",
-    "fake-data": "tsx scripts/generate-fake-data.ts"
+    "fake-data": "tsx scripts/generate-fake-data.ts",
+    "fake-sky": "tsx scripts/generate-fake-sky.ts",
+    "measure:map": "tsx scripts/measure-map.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
     "next": "16.4.3",
+    "pixi.js": "8.22.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "0.0.1",

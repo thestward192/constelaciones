@@ -1,37 +1,12 @@
-.main {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 24px 16px;
-  text-align: center;
-  background: radial-gradient(ellipse at center, var(--sky-2) 0%, var(--sky) 70%);
-}
-
-.eyebrow {
-  margin: 0;
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  font-variant-numeric: tabular-nums;
-}
-
-.title {
+/* Phase 5: the map takes the whole screen. The full top bar arrives in phase 6. */
+.brand {
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  left: max(20px, env(safe-area-inset-left, 0px));
   margin: 0;
   font-family: var(--display);
   font-weight: 600;
-  font-size: clamp(44px, 10vw, 88px);
+  font-size: 26px;
   letter-spacing: 0.02em;
-  line-height: 1;
-}
-
-.lead {
-  margin: 0;
-  max-width: 34ch;
-  font-size: 15px;
-  color: var(--ink-2);
+  pointer-events: none;
 }

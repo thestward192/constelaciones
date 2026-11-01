@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { SKY_BUCKET, skyFilesBaseUrl } from "../lib/sky-files-url";
 
 // The only place that knows where public files live. To move them to Cloudflare R2
 // (docs/constelaciones.md, 10.6), write another PublicStorage and swap it here.
@@ -19,14 +20,8 @@ export interface PublicStorage {
   publicUrl(path: string): string;
 }
 
-export const SKY_BUCKET = "files";
 export const IMMUTABLE = 31_536_000; // one year
 export const SHORT = 60;
-
-/** Public base URL of the sky files, usable from the browser. */
-export function skyFilesBaseUrl(supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL): string {
-  return `${supabaseUrl}/storage/v1/object/public/${SKY_BUCKET}`;
-}
 
 export function supabaseStorage(db: SupabaseClient): PublicStorage {
   const bucket = () => db.storage.from(SKY_BUCKET);
