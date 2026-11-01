@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 1 — Base de datos
+**Siguiente fase:** Fase 2 — Motor del cielo (lógica pura)
 
 ## Fase 0 — Preparación del proyecto
 
@@ -20,13 +20,15 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 1 — Base de datos
 
-- [ ] Migraciones SQL con el modelo de la sección 3 (ajustado si hace falta).
-- [ ] Políticas RLS: público solo lectura de lo indicado; escrituras solo con clave de servicio.
-- [ ] Función `search_stars(q text)`: coincidencia por prefijo primero, luego por similitud (`pg_trgm`); máximo 8 resultados; excluye estrellas en revisión.
-- [ ] Semilla de `figures`: al menos 12 figuras hechas a mano para empezar (colibrí, volcán, perezoso, tucán, ola, carreta, guitarra, mariposa, rana, colibrí en vuelo, palma, luna), más las 2 del prototipo.
-- [ ] Semilla de `planets` con nombres y umbrales.
-- [ ] Semilla de `blocked_words` en español (lista inicial; la dueña puede ampliarla).
-- [ ] Cliente de Supabase en `/src/server` (servidor con clave de servicio, navegador con clave pública).
+- [x] Migraciones SQL con el modelo de la sección 3 (ajustado si hace falta).
+- [x] Políticas RLS: público solo lectura de lo indicado; escrituras solo con clave de servicio.
+- [x] Función `search_stars(q text)`: coincidencia por prefijo primero, luego por similitud (`pg_trgm`); máximo 8 resultados; excluye estrellas en revisión.
+- [x] Semilla de `figures`: al menos 12 figuras hechas a mano para empezar (colibrí, volcán, perezoso, tucán, ola, carreta, guitarra, mariposa, rana, colibrí en vuelo, palma, luna), más las 2 del prototipo.
+- [x] Semilla de `planets` con nombres y umbrales.
+- [x] Semilla de `blocked_words` en español (lista inicial; la dueña puede ampliarla).
+- [x] Cliente de Supabase en `/src/server` (servidor con clave de servicio, navegador con clave pública).
+
+**Resumen:** Tres migraciones en `supabase/migrations` (esquema, seguridad, búsqueda) aplicadas en Supabase con `npm run db:migrate`. Ajustes al borrador: tabla `shooting_stars` para guardar el sorteo, `days.shooting_drawn_at`, `figures.slug`, restricciones de datos (usuario normalizado, estados, tipos de reto), índices de prefijo y por día, función `star_level()`, `pg_trgm` en el esquema `extensions`. RLS en todas las tablas: el público solo lee `sky_state`, columnas públicas de `days` y llama a `search_stars`. Semillas: 14 figuras (12 de la lista, con colibrí y volcán del prototipo, más quetzal y tortuga), 8 planetas, palabras bloqueadas. Clientes en `src/server/supabase`. Pruebas: 48 locales (PGlite) y 15 contra el proyecto real (`npm run test:remote`).
 
 ## Fase 2 — Motor del cielo (lógica pura)
 
@@ -105,3 +107,7 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 - [ ] Nombre de constelación: editar el nombre elegido por la comunidad.
 - [ ] Estadísticas del día y totales.
 - [ ] Exportar imagen de la constelación del día (apoyo para el video).
+
+## Notas para el lanzamiento
+
+- La clave `service_role` y la contraseña de la base de datos se compartieron en un chat: cambiarlas antes de lanzar (Supabase > Project Settings > API Keys y Database).
