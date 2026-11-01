@@ -23,7 +23,8 @@
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.14",
@@ -37,7 +38,6 @@
     "eslint-config-prettier": "10.1.8",
     "pg": "8.23.1",
     "prettier": "3.9.10",
-    "sharp": "0.35.5",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vitest": "5.0.5"

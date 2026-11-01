@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 4 — Archivos públicos
+**Siguiente fase:** Fase 5 — Mapa 2D
 
 ## Fase 0 — Preparación del proyecto
 
@@ -52,11 +52,13 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 4 — Archivos públicos
 
-- [ ] Generador de `c/{id}.v{V}.json` solo para constelaciones cambiadas.
-- [ ] Generador de `sky/index.v{N}.json` y `sky/latest.json`.
-- [ ] Generador de `sky/overview.v{N}.webp` (imagen de la espiral para el zoom lejano).
-- [ ] Subida a Supabase Storage con cabeceras de caché correctas (sección 4).
-- [ ] Ruta protegida `/api/jobs/publish` que corre el generador; se llama automáticamente al final del procesamiento.
+- [x] Generador de `c/{id}.v{V}.json` solo para constelaciones cambiadas.
+- [x] Generador de `sky/index.v{N}.json` y `sky/latest.json`.
+- [x] Generador de `sky/overview.v{N}.webp` (imagen de la espiral para el zoom lejano).
+- [x] Subida a Supabase Storage con cabeceras de caché correctas (sección 4).
+- [x] Ruta protegida `/api/jobs/publish` que corre el generador; se llama automáticamente al final del procesamiento.
+
+**Resumen:** Publicador en `src/server/publish` (formatos en `files.ts`, imagen en `overview.ts`, orquestación en `publish.ts`). Almacenamiento aislado en `src/server/storage.ts` (bucket público `files` en Supabase Storage; para pasar a R2 basta otra implementación). Solo se regeneran las constelaciones marcadas como cambiadas; la imagen de la espiral solo cuando se completa alguna; el índice solo si su contenido cambió (hash). Se guardan la versión actual y la anterior de cada archivo; los viejos se borran. Candado de publicación y funciones en la migración `20261102000001_publishing.sql`. Mientras una constelación se forma, su archivo no lleva nombre ni líneas. La imagen de la espiral es opaca sobre negro: el mapa debe dibujarla con mezcla aditiva (comprime mucho mejor que con transparencia). Rutas `POST /api/jobs/publish` y `POST /api/jobs/process` (procesa y luego publica). Tamaños medidos con 10.000 constelaciones: índice 122 KB gzip, imagen 137 KB, archivo de constelación 7–10 KB gzip. En Supabase con los datos de prueba (CDN con brotli): índice 1,8 KB, constelación ~5,2 KB, imagen 29 KB. 14 pruebas nuevas (150 en total).
 
 ## Fase 5 — Mapa 2D
 
