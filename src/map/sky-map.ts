@@ -1,10 +1,13 @@
 import { Application, Container } from "pixi.js";
 import {
   clampToWorld,
+  clampZoom,
   fitCircle,
   flightAt,
   flightDuration,
+  screenToWorld,
   visibleRect,
+  worldToScreen,
   zoomAt,
   type Camera,
   type Viewport,
@@ -16,6 +19,7 @@ import { EffectsLayer } from "./layers/effects-layer";
 import { FigureLayer } from "./layers/figure-layer";
 import { NameLayer } from "./layers/name-layer";
 import { RegionLayer } from "./layers/region-layer";
+import { SelectionLayer, type Selection } from "./layers/selection-layer";
 import { SolarLayer } from "./layers/solar-layer";
 import { StarLayer } from "./layers/star-layer";
 import { Minimap } from "./minimap";
@@ -26,7 +30,7 @@ import {
   type LoadedConstellation,
   type SkyData,
 } from "./sky-data";
-import { COLORS } from "./style";
+import { COLORS, starScreenRadius } from "./style";
 import { buildAtlas } from "./textures";
 import {
   layerWeights,
@@ -40,8 +44,27 @@ export interface SkyMapOptions {
   baseUrl: string;
   minimap?: HTMLCanvasElement | null;
   onCamera?: (cam: Camera, level: ZoomLevel) => void;
-  onReady?: (data: SkyData) => void;
+  /** The sky loaded. Comes with the map itself: it can arrive before create() resolves. */
+  onReady?: (data: SkyData, map: SkyMap) => void;
   onError?: (error: unknown) => void;
+  /** Something was tapped on the map (a star, the Sun, a planet) or empty sky. */
+  onPick?: (pick: MapPick) => void;
+  /** Screen space covered by panels right now (asked whenever the map focuses or fits). */
+  insets?: () => Insets;
+}
+
+export type MapPick =
+  | { kind: "star"; username: string; constellationId: number; x: number; y: number; level: number }
+  | { kind: "sun" }
+  | { kind: "planet"; name: string }
+  | { kind: "empty" };
+
+/** Screen space covered by panels; focusing and fitting keep things inside the rest. */
+export interface Insets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
 }
 
 const MAX_VISIBLE_CONSTELLATIONS = 320;
@@ -63,6 +86,7 @@ export class SkyMap {
   private lastMinimap = 0;
   private lastNotify = 0;
   private destroyed = false;
+  private visible: LoadedConstellation[] = [];
   private layers!: {
     backdrop: Backdrop;
     overview: OverviewLayer;
@@ -72,6 +96,7 @@ export class SkyMap {
     stars: StarLayer;
     names: NameLayer;
     effects: EffectsLayer;
+    selection: SelectionLayer;
   };
 
   private constructor(
@@ -123,6 +148,7 @@ export class SkyMap {
       stars: new StarLayer(atlas),
       names: new NameLayer(fonts),
       effects: new EffectsLayer(atlas, fonts),
+      selection: new SelectionLayer(),
     };
     const l = this.layers;
     this.world.addChild(
@@ -140,6 +166,7 @@ export class SkyMap {
       l.region.numbers,
       l.figures.labels,
       l.names.container,
+      l.selection.screen,
       l.effects.screen,
     );
     l.backdrop.resize(this.app.screen.width, this.app.screen.height);
@@ -158,6 +185,7 @@ export class SkyMap {
       },
       flyTo: (cam) => this.flyTo(cam),
       reducedMotion: () => this.reduced,
+      onTap: (x, y) => this.options.onPick?.(this.pickAt(x, y)),
     });
     if (this.options.minimap) {
       this.minimap = new Minimap(this.options.minimap, (x, y) => this.flyTo({ ...this.cam, x, y }));
@@ -188,7 +216,7 @@ export class SkyMap {
       this.minimap?.setData(data);
       l.overview.setData(data);
       this.cam = this.initialCamera(data);
-      this.options.onReady?.(data);
+      this.options.onReady?.(data, this);
     } catch (error) {
       this.options.onError?.(error);
     }
@@ -201,7 +229,6 @@ export class SkyMap {
 
   /** Opens on today's constellation(s), or the one forming, at constellation level. */
   private initialCamera(data: SkyData): Camera {
-    const view = this.viewport();
     const today = data.constellations.filter(
       (c) => data.index.day !== null && c.completedDay === data.index.day,
     );
@@ -211,15 +238,55 @@ export class SkyMap {
     const cx = focus.reduce((s, c) => s + c.x, 0) / focus.length;
     const cy = focus.reduce((s, c) => s + c.y, 0) / focus.length;
     const r = Math.max(...focus.map((c) => Math.hypot(c.x - cx, c.y - cy) + c.r));
-    const fit = fitCircle(view, cx, cy, r * 1.15, 60);
+    const fit = this.fitIn(cx, cy, r * 1.15, 40);
     if (fit.zoom >= ZOOM_THRESHOLDS.constellation * 1.3) return fit;
     // Too many to show at constellation level: the most recent one.
     const latest = focus[focus.length - 1];
-    return fitCircle(view, latest.x, latest.y, latest.r * 1.25, 60);
+    return this.fitIn(latest.x, latest.y, latest.r * 1.25, 40);
   }
 
   private fitAllCamera(): Camera {
-    return fitCircle(this.viewport(), 0, 0, (this.data?.radius ?? 1200) * 1.02, 24);
+    return this.fitIn(0, 0, (this.data?.radius ?? 1200) * 1.02, 16);
+  }
+
+  /** Fits a disc inside the part of the screen not covered by panels. */
+  private fitIn(cx: number, cy: number, r: number, padding: number): Camera {
+    const view = this.viewport();
+    const { top, right, bottom, left } = this.insets();
+    const usable = {
+      width: Math.max(80, view.width - left - right),
+      height: Math.max(80, view.height - top - bottom),
+    };
+    return this.centered(cx, cy, fitCircle(usable, cx, cy, r, padding).zoom);
+  }
+
+  /** Camera that puts (x, y) in the middle of the uncovered area at the given zoom. */
+  private centered(x: number, y: number, zoom: number): Camera {
+    const { top, right, bottom, left } = this.insets();
+    return { x: x - (left - right) / 2 / zoom, y: y - (top - bottom) / 2 / zoom, zoom };
+  }
+
+  /** What is at a screen point: the nearest star within reach, the Sun, a planet, or nothing. */
+  private pickAt(sx: number, sy: number): MapPick {
+    const view = this.viewport();
+    const { zoom } = this.cam;
+    if (layerWeights(zoom).stars > 0.3) {
+      let best: MapPick | null = null;
+      let bestDistance = Infinity;
+      for (const loaded of this.visible) {
+        for (const [, username, x, y, level] of loaded.file.stars) {
+          const p = worldToScreen(this.cam, view, x, y);
+          const d = Math.hypot(p.x - sx, p.y - sy);
+          if (d < Math.max(12, starScreenRadius(level, zoom) + 8) && d < bestDistance) {
+            bestDistance = d;
+            best = { kind: "star", username, constellationId: loaded.info.id, x, y, level };
+          }
+        }
+      }
+      if (best) return best;
+    }
+    const w = screenToWorld(this.cam, view, sx, sy);
+    return this.layers.solar.hitTest(w.x, w.y, zoom) ?? { kind: "empty" };
   }
 
   private viewport(): Viewport {
@@ -272,6 +339,7 @@ export class SkyMap {
     l.figures.update(frame);
     l.names.update(frame, visible);
     l.effects.update(frame);
+    l.selection.update(frame);
 
     const now = performance.now();
     if (this.minimap && (moved || now - this.lastMinimap > 1000) && now - this.lastMinimap > 66) {
@@ -290,6 +358,7 @@ export class SkyMap {
     if (!this.data || !this.cache || frame.cam.zoom < LOAD_FROM_ZOOM) {
       stars.setVisible([]);
       figures.setVisible([]);
+      this.visible = [];
       return [];
     }
     const { x, y } = frame.cam;
@@ -303,6 +372,7 @@ export class SkyMap {
       const l = this.cache.get(c.id);
       if (l) loaded.push(l);
     }
+    this.visible = loaded;
     const ids = loaded.map((l) => l.info.id).sort((a, b) => a - b);
     stars.setVisible(ids);
     figures.setVisible(ids);
@@ -350,6 +420,27 @@ export class SkyMap {
   /** The Sun with the whole sky in view. */
   fitAll() {
     this.flyTo(this.fitAllCamera());
+  }
+
+  /** Today's constellation(s), as when the page opens. */
+  flyToToday() {
+    if (this.data) this.flyTo(this.initialCamera(this.data));
+  }
+
+  /** Travels to a point, keeping it in the uncovered part of the screen. */
+  focusOn(x: number, y: number, zoom = Math.max(this.cam.zoom, 1.6)) {
+    this.flyTo(this.centered(x, y, clampZoom(zoom)));
+  }
+
+  /** Marks a star (gold circle, light threads) and dims the other constellations; null clears. */
+  select(selection: Selection | null, constellationId: number | null = null) {
+    this.layers.selection.set(selection, this.time);
+    this.layers.stars.setFocus(selection ? constellationId : null);
+    this.layers.figures.setFocus(selection ? constellationId : null);
+  }
+
+  private insets(): Insets {
+    return this.options.insets?.() ?? { top: 0, right: 0, bottom: 0, left: 0 };
   }
 
   /** Stops drawing (while the 3D view is open). */

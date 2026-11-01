@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 6 — Interfaz pública
+**Siguiente fase:** Fase 7 — Vista 3D
 
 ## Fase 0 — Preparación del proyecto
 
@@ -78,14 +78,16 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 6 — Interfaz pública
 
-- [ ] Barra superior: nombre, día, etapa con progreso.
-- [ ] Buscador con sugerencias (llama a `search_stars`, con espera de 200 ms al escribir); viaja a la estrella, descarga solo su constelación y la selecciona.
-- [ ] Panel: constelación de hoy, próxima constelación (contador), reto del día, estrellas fugaces de hoy, niveles.
-- [ ] Tarjeta de estrella completa (sección 6 del documento de diseño), con hilos de luz dibujados en el mapa.
-- [ ] Tarjetas del Sol y de cada planeta.
-- [ ] Atajos: Ver todo, Hoy, Mi estrella (recordada en el navegador).
-- [ ] Versión celular: barra inferior plegable y tarjeta desde abajo.
-- [ ] Enlaces directos: `/@usuario` abre la página centrada en esa estrella (para compartir).
+- [x] Barra superior: nombre, día, etapa con progreso.
+- [x] Buscador con sugerencias (llama a `search_stars`, con espera de 200 ms al escribir); viaja a la estrella, descarga solo su constelación y la selecciona.
+- [x] Panel: constelación de hoy, próxima constelación (contador), reto del día, estrellas fugaces de hoy, niveles.
+- [x] Tarjeta de estrella completa (sección 6 del documento de diseño), con hilos de luz dibujados en el mapa.
+- [x] Tarjetas del Sol y de cada planeta.
+- [x] Atajos: Ver todo, Hoy, Mi estrella (recordada en el navegador).
+- [x] Versión celular: barra inferior plegable y tarjeta desde abajo.
+- [x] Enlaces directos: `/@usuario` abre la página centrada en esa estrella (para compartir).
+
+**Resumen:** Interfaz en `src/components/app` (barra superior, buscador, panel, tarjetas y `SkyApp`, que lo coordina), con los estilos del prototipo. Nueva función pública `star_details` (migración `20261103000001_star_details.sql`) que devuelve los datos de la tarjeta y los hilos de luz de una sola estrella (nunca las que están en revisión). En el mapa: selección con círculo dorado y pulso, hilos de luz curvos, atenuación de las demás constelaciones, toques sobre estrellas, el Sol y los planetas, y márgenes para que los paneles no tapen lo que se busca. Los enlaces `/@usuario` se resuelven con una reescritura en `next.config.ts`; al seleccionar una estrella la dirección cambia a su enlace para poder compartirlo. "Mi estrella" se recuerda en el navegador al buscar. Los botones "Ver mi estrella en 3D" y "Ver postal" están en la tarjeta pero desactivados hasta las fases 7 y 8. Pruebas: 3 nuevas de base de datos (175 en total) y 5 de Playwright (buscar, nombre inexistente, enlace compartido, tocar el Sol, sin desborde a 360 px) en escritorio y celular.
 
 ## Fase 7 — Vista 3D
 

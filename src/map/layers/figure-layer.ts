@@ -60,6 +60,12 @@ export class FigureLayer {
     this.figures.delete(id);
   }
 
+  private focus: number | null = null;
+
+  setFocus(constellationId: number | null) {
+    this.focus = constellationId;
+  }
+
   setVisible(ids: number[]) {
     this.visible = new Set(ids);
   }
@@ -74,7 +80,7 @@ export class FigureLayer {
       const onScreen = this.visible.has(id);
       if (figure.lines) {
         figure.lines.visible = onScreen;
-        figure.lines.alpha = lineAlpha;
+        figure.lines.alpha = lineAlpha * this.dim(id);
         if (onScreen && !figure.revealed && lineAlpha > 0.5) {
           if (frame.reducedMotion) {
             figure.revealed = true;
@@ -106,7 +112,7 @@ export class FigureLayer {
           : figure.today && !figure.revealed
             ? 0
             : 1;
-      figure.label.alpha = labelAlpha * revealAlpha;
+      figure.label.alpha = labelAlpha * revealAlpha * this.dim(id);
       figure.label.position.set(Math.round(p.x), Math.round(p.y + 18));
       const title = figure.label.children[1] as Text;
       if (figure.loaded.file.status === "complete") {
@@ -114,6 +120,10 @@ export class FigureLayer {
         title.scale.set(size / TITLE_FONT_SIZE);
       }
     }
+  }
+
+  private dim(id: number) {
+    return this.focus !== null && id !== this.focus ? 0.5 : 1;
   }
 
   private drawLines(figure: Figure, progress: number) {

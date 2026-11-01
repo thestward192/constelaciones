@@ -1,5 +1,4 @@
 import { Particle, ParticleContainer } from "pixi.js";
-import type { StarTuple } from "../../sky/public-files";
 import { fadeIn } from "../zoom-levels";
 import { hash01, type FrameState } from "../frame";
 import type { LoadedConstellation } from "../sky-data";
@@ -22,12 +21,7 @@ interface Entry {
   alpha: number;
   speed: number;
   phase: number;
-}
-
-export interface StarRef {
-  constellationId: number;
-  star: StarTuple;
-  anchor: boolean;
+  constellation: number;
 }
 
 /**
@@ -42,6 +36,7 @@ export class StarLayer {
   private entries: Entry[] = [];
   private dirty = false;
   private lastFactor = 0;
+  private focus: number | null = null;
 
   constructor(private atlas: Atlas) {
     this.container = new ParticleContainer({
@@ -74,7 +69,7 @@ export class StarLayer {
           anchorX: 0.5,
           anchorY: 0.5,
         });
-        entries.push({ p, kind, base, alpha, speed, phase });
+        entries.push({ p, kind, base, alpha, speed, phase, constellation: file.id });
       };
       // Glow sprite is 7 radii wide (prototype), a bit wider from Gigante azul up.
       make(Kind.Glow, `glow${level as 0}`, (r * 7 * (level >= 3 ? 1.25 : 1)) / CELL, 1);
@@ -97,6 +92,11 @@ export class StarLayer {
   }
 
   /** Constellations on screen now. */
+  /** With a star selected, the other constellations dim (prototype: 55%). */
+  setFocus(constellationId: number | null) {
+    this.focus = constellationId;
+  }
+
   setVisible(ids: number[]) {
     if (ids.length === this.visible.length && ids.every((id, i) => id === this.visible[i])) return;
     this.visible = ids;
@@ -132,7 +132,7 @@ export class StarLayer {
     const still = frame.reducedMotion;
     for (const e of this.entries) {
       const twinkle = still ? 1 : 0.78 + 0.22 * Math.sin(t * e.speed + e.phase);
-      let a = e.alpha * weight;
+      let a = e.alpha * weight * (this.focus !== null && e.constellation !== this.focus ? 0.55 : 1);
       if (e.kind === Kind.Glow || e.kind === Kind.Flare) a *= twinkle;
       else if (e.kind === Kind.Trail) a *= trails;
       else a *= details;

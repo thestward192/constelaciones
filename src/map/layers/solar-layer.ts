@@ -13,6 +13,9 @@ const BASE_PERIOD_S = 600;
 
 interface Planet {
   name: string;
+  /** Last drawn position (world). */
+  x: number;
+  y: number;
   threshold: number;
   orbit: number;
   unlocked: boolean;
@@ -106,6 +109,8 @@ export class SolarLayer {
       this.labels.addChild(label);
       return {
         name,
+        x: 0,
+        y: -orbit,
         threshold,
         orbit,
         unlocked,
@@ -142,6 +147,8 @@ export class SolarLayer {
       const angle = p.phase + (frame.reducedMotion ? 0 : (now / p.period) * Math.PI * 2);
       const x = Math.cos(angle) * p.orbit;
       const y = Math.sin(angle) * p.orbit;
+      p.x = x;
+      p.y = y;
       if (p.body) {
         const r = PLANET_STYLE[p.name]?.radius ?? 40;
         const scale = Math.max(1, PLANET_MIN_PX / (r * zoom));
@@ -160,6 +167,28 @@ export class SolarLayer {
         : 4;
       p.label.position.set(Math.round(s.x), Math.round(s.y - offset));
     }
+  }
+
+  /** What is under a tap (world point): the Sun, a planet, or the label of a planet still to unlock. */
+  hitTest(
+    wx: number,
+    wy: number,
+    zoom: number,
+  ): { kind: "sun" } | { kind: "planet"; name: string } | null {
+    const px = (d: number) => d * zoom; // world distance → screen pixels
+    if (px(Math.hypot(wx, wy)) < Math.max(SUN_RADIUS * zoom, SUN_MIN_PX) + 10)
+      return { kind: "sun" };
+    for (const p of this.planets) {
+      if (p.unlocked) {
+        const r = PLANET_STYLE[p.name]?.radius ?? 40;
+        if (px(Math.hypot(wx - p.x, wy - p.y)) < Math.max(r * zoom, PLANET_MIN_PX) + 12) {
+          return { kind: "planet", name: p.name };
+        }
+      } else if (p.label.visible && px(Math.hypot(wx, wy + p.orbit)) < 40) {
+        return { kind: "planet", name: p.name };
+      }
+    }
+    return null;
   }
 
   private planetTexture(name: string) {

@@ -111,6 +111,32 @@
   color: var(--ink);
 }
 
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Shortcut buttons (Ver todo, Hoy, Mi estrella), passed in by the page. */
+.controls > button {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(var(--panel-blur));
+  -webkit-backdrop-filter: blur(var(--panel-blur));
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.controls > button:hover {
+  background: var(--panel-solid);
+}
+
 .zoom {
   display: flex;
   flex-direction: column;
@@ -152,6 +178,17 @@
 }
 
 @media (max-width: 860px) {
+  /* Above the bottom bar. */
+  .corner {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .controls {
+    flex-direction: column-reverse;
+    align-items: flex-end;
+  }
+
   .minimap {
     width: 96px;
     height: 96px;
