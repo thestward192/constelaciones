@@ -1,8 +1,12 @@
+import { LEVELS } from "../sky/levels";
 import { formatNumber } from "./format";
 
 // How each daily challenge is told on the page (docs/constelaciones.md, section 6).
 
-const TEXTS: Record<string, { label: string; title: (goal: number) => string; unlock: string }> = {
+const TEXTS: Record<
+  string,
+  { label: string; title: (goal: number, level: string) => string; unlock: string }
+> = {
   cantidad: {
     label: "Cantidad",
     title: (g) => `Hoy formemos ${formatNumber(g)} ${g === 1 ? "constelación" : "constelaciones"}`,
@@ -25,7 +29,7 @@ const TEXTS: Record<string, { label: string; title: (goal: number) => string; un
   },
   racha: {
     label: "Racha",
-    title: (g) => `Que ${formatNumber(g)} personas lleguen a Estrella amarilla`,
+    title: (g, level) => `Que ${formatNumber(g)} personas lleguen a ${level}`,
     unlock: "una lluvia de estrellas",
   },
   record: {
@@ -35,11 +39,13 @@ const TEXTS: Record<string, { label: string; title: (goal: number) => string; un
   },
 };
 
-export function describeChallenge(type: string, goal: number) {
+/** Texts of a challenge. `level` is the level a "racha" asks for (2 = Estrella amarilla). */
+export function describeChallenge(type: string, goal: number, level = 2) {
   const text = TEXTS[type] ?? {
     label: type,
     title: () => `Meta: ${formatNumber(goal)}`,
     unlock: "algo nuevo en el cielo",
   };
-  return { label: text.label, title: text.title(goal), unlock: text.unlock };
+  const levelName = (LEVELS[level] ?? LEVELS[2]).name;
+  return { label: text.label, title: text.title(goal, levelName), unlock: text.unlock };
 }

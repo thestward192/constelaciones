@@ -106,14 +106,48 @@ export async function updateDay(_: ActionState, form: FormData): Promise<ActionS
   });
 }
 
+const UNLOCK_NAMES: Record<string, string> = {
+  aurora: "una aurora boreal",
+  cometa: "un cometa",
+  luna: "la luna llena",
+  borde_dorado: "el borde dorado",
+  lluvia: "una lluvia de estrellas",
+  nebulosa: "una nebulosa",
+};
+
 export async function setDayClosed(_: ActionState, form: FormData): Promise<ActionState> {
   return guarded(async () => {
     const day = intField(form, "day");
     const closed = form.get("closed") === "true";
     if (!day) return fail("Falta el día.");
-    const { error } = await getAdminClient().from("days").update({ closed }).eq("day", day);
+    const db = getAdminClient();
+    if (!closed) {
+      const { error } = await db.from("days").update({ closed: false }).eq("day", day);
+      if (error) return fail(error.message);
+      return done(`Día ${day} abierto de nuevo.`);
+    }
+    const { data, error } = await db.rpc("close_day", { p_day: day });
     if (error) return fail(error.message);
-    return done(closed ? `Día ${day} cerrado.` : `Día ${day} abierto de nuevo.`);
+    const result = data as {
+      challenge: boolean;
+      met?: boolean;
+      unlock?: string | null;
+      progress?: number;
+      goal?: number;
+      goldBorders?: number;
+    };
+    if (!result.challenge) return done(`Día ${day} cerrado. No tenía reto.`);
+    if (!result.met) {
+      return done(
+        `Día ${day} cerrado. El reto llegó a ${result.progress} de ${result.goal}: esta vez no se cumplió.`,
+      );
+    }
+    const gold = result.goldBorders
+      ? ` ${result.goldBorders} ${result.goldBorders === 1 ? "estrella recibió" : "estrellas recibieron"} el borde dorado.`
+      : "";
+    return done(
+      `Día ${day} cerrado. Reto cumplido: se desbloqueó ${UNLOCK_NAMES[result.unlock ?? ""] ?? "algo nuevo"}.${gold} Publica para que aparezca en el cielo.`,
+    );
   });
 }
 
@@ -230,15 +264,21 @@ export async function setChallenge(_: ActionState, form: FormData): Promise<Acti
   return guarded(async () => {
     const day = intField(form, "day");
     const type = String(form.get("type") ?? "");
-    const goal = intField(form, "goal");
+    const level = intField(form, "level") ?? 2;
     if (!day) return fail("Falta el día.");
     if (!CHALLENGE_TYPES.includes(type)) return fail("Elige un tipo de reto.");
+    // A record's goal is always the best earlier day plus one; it is computed, not typed.
+    const goal = type === "record" ? 1 : intField(form, "goal");
     if (!goal || goal < 1) return fail("La meta debe ser un número mayor que 0.");
-    const { error } = await getAdminClient()
+    if (level < 1 || level > 6) return fail("Elige un nivel de estrella.");
+    const db = getAdminClient();
+    const { error } = await db
       .from("days")
-      .update({ challenge_type: type, challenge_goal: goal })
+      .update({ challenge_type: type, challenge_goal: goal, challenge_level: level })
       .eq("day", day);
     if (error) return fail(error.message);
+    const { error: refreshError } = await db.rpc("refresh_challenge", { p_day: day });
+    if (refreshError) return fail(refreshError.message);
     return done("Reto guardado. Publica para que aparezca en la página.");
   });
 }

@@ -107,7 +107,7 @@ async function DaysContent() {
                         confirm={
                           d.closed
                             ? undefined
-                            : `¿Cerrar el día ${d.day}? Ya no se podrán importar comentarios para ese día.`
+                            : `¿Cerrar el día ${d.day}? Ya no se podrán importar comentarios para ese día y se decide si se cumplió el reto.`
                         }
                       >
                         <input type="hidden" name="day" value={d.day} />

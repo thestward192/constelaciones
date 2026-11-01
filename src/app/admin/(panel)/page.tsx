@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { describeChallenge } from "@/lib/challenge";
 import { formatNumber } from "@/lib/format";
+import { LEVELS } from "@/sky/levels";
 import { toRoman } from "@/map/style";
 import { lastRuns, type JobRun } from "@/server/admin/jobs";
 import {
@@ -9,6 +10,7 @@ import {
   dayStats,
   getDay,
   listDays,
+  liveChallenge,
   shootingWinners,
   skyTotals,
 } from "@/server/admin/queries";
@@ -61,13 +63,14 @@ async function DayContent({ searchParams }: Pick<PageProps<"/admin">, "searchPar
     );
   }
 
-  const [day, stats, runs, winners, completed, instagram] = await Promise.all([
+  const [day, stats, runs, winners, completed, instagram, live] = await Promise.all([
     getDay(dayNumber),
     dayStats(dayNumber),
     lastRuns(getAdminClient()),
     shootingWinners(dayNumber),
     constellationsCompletedOn(dayNumber),
     getInstagramToken(getAdminClient()),
+    liveChallenge(dayNumber),
   ]);
   const instagramWarning = instagram ? tokenStatus(instagram).warning : null;
   const known = days.map((d) => d.day);
@@ -193,15 +196,18 @@ async function DayContent({ searchParams }: Pick<PageProps<"/admin">, "searchPar
         <section className={styles.card}>
           <h2>Reto del día</h2>
           {day?.challenge_type && day.challenge_goal ? (
-            <p className={styles.muted}>
-              {describeChallenge(day.challenge_type, day.challenge_goal).title}. Progreso:{" "}
-              <b className={styles.mono}>
-                {formatNumber(day.challenge_progress)} de {formatNumber(day.challenge_goal)}
-              </b>
-              {day.challenge_met === true && (
-                <span className={`${styles.tag} ${styles.tagGold}`}> Cumplido</span>
-              )}
-            </p>
+            <ChallengeStatus
+              type={day.challenge_type}
+              goal={
+                day.closed
+                  ? day.challenge_goal
+                  : challengeGoal(day.challenge_type, day.challenge_goal, live.best)
+              }
+              level={day.challenge_level}
+              progress={day.closed ? day.challenge_progress : live.progress}
+              met={day.challenge_met}
+              closed={day.closed}
+            />
           ) : (
             <p className={styles.muted}>Este día todavía no tiene reto.</p>
           )}
@@ -220,15 +226,23 @@ async function DayContent({ searchParams }: Pick<PageProps<"/admin">, "searchPar
               </label>
               <label className={styles.field}>
                 Meta
-                <input
-                  name="goal"
-                  type="number"
-                  min={1}
-                  defaultValue={day?.challenge_goal ?? ""}
-                  required
-                />
+                <input name="goal" type="number" min={1} defaultValue={day?.challenge_goal ?? ""} />
+              </label>
+              <label className={styles.field}>
+                Nivel (racha)
+                <select name="level" defaultValue={day?.challenge_level ?? 2}>
+                  {LEVELS.slice(1).map((level, i) => (
+                    <option key={level.key} value={i + 1}>
+                      {level.name}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
+            <p className={styles.muted} style={{ margin: 0 }}>
+              En el récord la meta se calcula sola: el mejor día anterior más uno. El nivel solo se
+              usa en la racha.
+            </p>
           </ActionForm>
         </section>
 
@@ -316,6 +330,44 @@ function Stat({ label, value }: { label: string; value: number }) {
       <span>{label}</span>
       <b>{formatNumber(value)}</b>
     </div>
+  );
+}
+
+/** The goal shown while a day is open: a record always aims at the best earlier day plus one. */
+function challengeGoal(type: string, goal: number, best: number) {
+  return type === "record" ? best + 1 : goal;
+}
+
+function ChallengeStatus(props: {
+  type: string;
+  goal: number;
+  level: number;
+  progress: number;
+  met: boolean | null;
+  closed: boolean;
+}) {
+  const text = describeChallenge(props.type, props.goal, props.level);
+  const reached = props.progress >= props.goal;
+  return (
+    <>
+      <p className={styles.muted}>
+        {text.title}. Progreso:{" "}
+        <b className={styles.mono}>
+          {formatNumber(props.progress)} de {formatNumber(props.goal)}
+        </b>{" "}
+        {props.met === true && <span className={`${styles.tag} ${styles.tagGold}`}>Cumplido</span>}
+        {props.closed && props.met === false && <span className={styles.tag}>No se cumplió</span>}
+      </p>
+      <p className={styles.muted}>
+        {props.met
+          ? `Desbloqueado: ${text.unlock}.`
+          : props.closed
+            ? "Sin desbloqueo esta vez."
+            : reached
+              ? `Meta alcanzada. Al cerrar el día se desbloquea ${text.unlock}.`
+              : `Si se cumple, al cerrar el día se desbloquea ${text.unlock}.`}
+      </p>
+    </>
   );
 }
 

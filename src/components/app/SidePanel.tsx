@@ -27,7 +27,10 @@ export default function SidePanel({ data, onConstellation, onUsername }: Props) 
   const featured = todayList.at(-1) ?? data.constellations.filter((c) => c.complete).at(-1) ?? null;
   const forming = data.constellations.find((c) => !c.complete) ?? null;
   const challenge = index.challenge
-    ? { ...index.challenge, ...describeChallenge(index.challenge.type, index.challenge.goal) }
+    ? {
+        ...index.challenge,
+        ...describeChallenge(index.challenge.type, index.challenge.goal, index.challenge.level),
+      }
     : null;
 
   const summary = featured?.name ?? (forming ? `Constelación ${toRoman(forming.id)}` : "");

@@ -47,6 +47,8 @@ export interface SkyIndex {
     goal: number;
     progress: number;
     met: boolean | null;
+    /** Level asked by a "racha" challenge (index in LEVELS). */
+    level?: number;
   } | null;
   shooting: string[];
   unlocks: { day: number; type: string; params: unknown }[];

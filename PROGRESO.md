@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 11 — Retos y desbloqueos
+**Siguiente fase:** Fase 12 — Rendimiento y pruebas de carga
 
 ## Fase 0 — Preparación del proyecto
 
@@ -137,7 +137,18 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 **Resumen:** Cliente de la Instagram API con inicio de sesión de Instagram (`graph.instagram.com`, v26.0, revisada en la documentación oficial de octubre de 2026) en `src/server/instagram/`: lee todas las páginas de comentarios (50 por página) y sus respuestas, omite las respuestas de la propia cuenta y los comentarios ocultos, y guarda cada comentario una sola vez con el id de Instagram. Los días con un enlace del video se resuelven al id real buscando entre los videos recientes. El token vive en la tabla `instagram_auth` (migración `20261105000001_instagram.sql`, solo clave de servicio), se pega en la nueva página del panel **Instagram** (se comprueba antes de guardarlo) o en `IG_ACCESS_TOKEN`, y se renueva solo cada semana; si falla o le quedan menos de 14 días, el panel avisa. Ruta `POST /api/jobs/hourly` (renovar → importar los días abiertos → procesar → publicar; un error de Instagram no detiene el resto). Script `npm run cron:schedule` que programa la tarea en Supabase con el secreto guardado en Vault (probado: se programa, se revisa y se quita). En la página Día, botón **Importar desde Instagram**. 15 pruebas nuevas (220 en total), una prueba remota de la tarea completa con un Instagram falso (16 en total) y una de pantalla de la página Instagram (26 en total).
 
-**Pendiente de la dueña:** seguir `docs/instagram-setup.md`, pegar el token en `/admin/instagram` y probar con un comentario real (aceptación de la fase). La tarea automática de cada hora se activa en la fase 13, cuando exista el dominio.
+**Pendiente de la dueña (pospuesto por ella):** seguir `docs/instagram-setup.md`, pegar el token en `/admin/instagram` y probar con un comentario real (aceptación de la fase). La tarea automática de cada hora se activa en la fase 13, cuando exista el dominio.
+
+## Fase 11 — Retos y desbloqueos
+
+- [x] Cálculo del progreso de cada tipo: cantidad (constelaciones nuevas), velocidad (estrellas en la primera hora desde la publicación del video), regreso (participaciones de personas que ya tenían estrella), invitación (invitaciones resueltas en el día), racha (personas que llegan a cierto nivel en el día), récord (más estrellas nuevas que cualquier día anterior).
+- [x] Al cerrar el día: marcar cumplido y crear el desbloqueo correspondiente.
+- [x] Desbloqueo "borde dorado" para las estrellas que invitaron ese día.
+- [x] Progreso en vivo en la página (actualizado en cada publicación).
+
+**Resumen:** Migración `20261106000001_challenges.sql`: `challenge_progress(día)` calcula los seis tipos en la base; `refresh_challenge` guarda el progreso (y en el récord la meta, que es el mejor día anterior más uno); `close_day` cierra el día, marca si se cumplió y crea el desbloqueo una sola vez (aurora, cometa, luna, borde dorado, lluvia, nebulosa con un color propio por día). Un desbloqueo nunca se pierde, aunque el día se vuelva a abrir. En el reto de invitación cumplido, quienes invitaron ese día reciben el borde dorado y su constelación se vuelve a publicar. Nueva columna `days.challenge_level` para la racha (por defecto Estrella amarilla), elegible en el panel. Cada publicación actualiza el progreso, así la página lo muestra en vivo; el panel lo calcula al momento y avisa qué se desbloquea. El botón Cerrar del panel informa el resultado del reto. 17 pruebas nuevas (237 en total), con una prueba por tipo de reto sobre datos falsos; la prueba de pantalla del día completo ahora cumple un reto de invitación y comprueba el borde dorado.
+
+**Nota:** el brillo dorado de 24 horas del documento de producto no se agregó; el borde dorado permanente sí. Se puede sumar más adelante si lo quieres.
 
 ## Notas para el lanzamiento
 

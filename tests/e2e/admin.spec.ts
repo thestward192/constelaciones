@@ -82,10 +82,12 @@ test("the owner can run a whole day from the panel", async ({ page }, testInfo) 
   });
 
   // 4. Challenge of the day.
-  await page.getByLabel("Tipo").selectOption("cantidad");
-  await page.getByLabel("Meta").fill("3");
+  await page.getByLabel("Tipo").selectOption("invitacion");
+  await page.getByLabel("Meta").fill("1");
   await page.getByRole("button", { name: "Guardar reto" }).click();
   await expect(page.getByText("Reto guardado.")).toBeVisible({ timeout: 20_000 });
+  // The live progress already counts the invitation.
+  await expect(page.getByText("Progreso: 1 de 1")).toBeVisible();
 
   // 5. Shooting star draw, which can only happen once.
   await page.getByLabel("Cuántas").fill("2");
@@ -114,7 +116,16 @@ test("the owner can run a whole day from the panel", async ({ page }, testInfo) 
     .getByRole("row")
     .filter({ has: page.getByRole("link", { name: String(day), exact: true }) });
   await dayRow.getByRole("button", { name: "Cerrar" }).click();
-  await expect(page.getByText(`Día ${day} cerrado.`)).toBeVisible({ timeout: 20_000 });
+  // The challenge was met: the inviter gets the gold border.
+  await expect(
+    page.getByText(`Día ${day} cerrado. Reto cumplido: se desbloqueó el borde dorado.`),
+  ).toBeVisible({ timeout: 20_000 });
+  const { data: inviter } = await admin
+    .from("stars")
+    .select("gold_border")
+    .eq("username", names[0])
+    .single();
+  expect(inviter?.gold_border).toBe(true);
 
   // The new stars are on the public page.
   await page.goto(`/@${names[1]}`);

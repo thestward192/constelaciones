@@ -106,6 +106,11 @@ export async function publishSky(
       summary.overviewRegenerated = true;
     }
 
+    // The challenge's live progress goes into every new index.
+    if (state.current_day) {
+      const { error } = await db.rpc("refresh_challenge", { p_day: state.current_day });
+      if (error) throw new Error(`refresh_challenge failed: ${error.message}`);
+    }
     const content = await indexContent(db, state, constellations, overview);
     const hash = indexHash(content);
     if (hash === state.index_hash && !summary.overviewRegenerated) {
@@ -260,7 +265,9 @@ async function indexContent(
     day
       ? db
           .from("days")
-          .select("day, challenge_type, challenge_goal, challenge_progress, challenge_met")
+          .select(
+            "day, challenge_type, challenge_goal, challenge_progress, challenge_met, challenge_level",
+          )
           .eq("day", day)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -280,6 +287,7 @@ async function indexContent(
     challenge_goal: number | null;
     challenge_progress: number;
     challenge_met: boolean | null;
+    challenge_level: number;
   } | null;
   const shootingRows = must(shooting, "shooting stars") as unknown as {
     stars: { username: string; status: string } | null;
@@ -309,6 +317,9 @@ async function indexContent(
             goal: challengeRow.challenge_goal,
             progress: challengeRow.challenge_progress,
             met: challengeRow.challenge_met,
+            ...(challengeRow.challenge_type === "racha"
+              ? { level: challengeRow.challenge_level }
+              : {}),
           }
         : null,
     shooting: shootingRows
