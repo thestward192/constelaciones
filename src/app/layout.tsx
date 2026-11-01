@@ -24,7 +24,15 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+/** Absolute base for share previews: the site domain, or Vercel's production URL. */
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Constelaciones",
   description:
     "Un reto de 365 días donde la comunidad construye un universo, estrella por estrella.",

@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 8 — Postal
+**Siguiente fase:** Fase 9 — Panel de administración
 
 ## Fase 0 — Preparación del proyecto
 
@@ -103,9 +103,11 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 8 — Postal
 
-- [ ] Ruta `/api/postal/[usuario]` que genera la imagen 1080 × 1920 con `@vercel/og` (diseño de la sección 8 del documento de diseño).
-- [ ] Botón en la tarjeta para ver y descargar la postal.
-- [ ] La misma imagen sirve como vista previa al compartir el enlace `/@usuario`.
+- [x] Ruta `/api/postal/[usuario]` que genera la imagen 1080 × 1920 con `@vercel/og` (diseño de la sección 8 del documento de diseño).
+- [x] Botón en la tarjeta para ver y descargar la postal.
+- [x] La misma imagen sirve como vista previa al compartir el enlace `/@usuario`.
+
+**Resumen:** Ruta `GET /api/postal/[usuario]` con `ImageResponse` de `next/og` (es `@vercel/og`, ya incluido en Next; no hizo falta otra dependencia). Diseño de la sección 8 en `src/server/postal` (`layout.ts` puro y probado: textos, tamaño del @ que se ajusta a nombres de hasta 30 caracteres y dibujo SVG de la constelación con doble círculo dorado; `data.ts` lee la estrella de la base y su constelación de los archivos públicos, con caché en memoria). Fuentes WOFF con licencia OFL en `assets/fonts` (el generador no acepta WOFF2). Ventana de la postal con descarga desde la tarjeta. Los enlaces `/@usuario` ahora se sirven desde `/estrella/[usuario]` (reescritura en `next.config.ts`) para tener metadatos propios: título y la postal como vista previa (`og:image`, tarjeta grande en X); otras direcciones dan 404. Nueva variable `NEXT_PUBLIC_SITE_URL` para la dirección pública (fase 13). Tiempos en producción: 0,24–0,63 s por postal; la primera tras arrancar un servidor tarda ~1,1 s (carga del motor de imágenes); la CDN guarda cada postal 1 hora. Se agregó la estrella de prueba `prueba_nombre_muy_largo_123456` (30 caracteres). 7 pruebas nuevas (190 en total) y 2 de Playwright (20 en total).
 
 ## Fase 9 — Panel de administración
 
@@ -122,5 +124,6 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Notas para el lanzamiento
 
+- Definir `NEXT_PUBLIC_SITE_URL` con el dominio para las vistas previas al compartir.
 - Borrar los datos de prueba (`prueba_*`) antes de lanzar (fase 13).
 - La clave `service_role` y la contraseña de la base de datos se compartieron en un chat: cambiarlas antes de lanzar (Supabase > Project Settings > API Keys y Database).

@@ -21,10 +21,11 @@ interface Props {
   onClose: () => void;
   onUsername: (username: string) => void;
   onView3D: (target: ViewerTarget) => void;
+  onPostal: (username: string) => void;
 }
 
 /** Right card on desktop, sheet from the bottom on phones: a star, the Sun or a planet. */
-export default function Card({ card, data, onClose, onUsername, onView3D }: Props) {
+export default function Card({ card, data, onClose, onUsername, onView3D, onPostal }: Props) {
   return (
     <article className={styles.starCard} aria-live="polite" aria-label="Detalle">
       {card.kind === "star" ? (
@@ -34,6 +35,7 @@ export default function Card({ card, data, onClose, onUsername, onView3D }: Prop
           onClose={onClose}
           onUsername={onUsername}
           onView3D={onView3D}
+          onPostal={onPostal}
         />
       ) : card.kind === "sun" ? (
         <SunBody data={data} onClose={onClose} onView3D={onView3D} />
@@ -79,12 +81,14 @@ function StarBody({
   onClose,
   onUsername,
   onView3D,
+  onPostal,
 }: {
   card: Extract<CardState, { kind: "star" }>;
   data: SkyData;
   onClose: () => void;
   onUsername: (u: string) => void;
   onView3D: (target: ViewerTarget) => void;
+  onPostal: (username: string) => void;
 }) {
   if (card.status !== "ready") {
     const message =
@@ -200,7 +204,7 @@ function StarBody({
       >
         Ver mi estrella en 3D
       </button>
-      <button className={styles.btnPostal} type="button" disabled title="Disponible pronto">
+      <button className={styles.btnPostal} type="button" onClick={() => onPostal(d.username)}>
         Ver postal de mi estrella
       </button>
     </>

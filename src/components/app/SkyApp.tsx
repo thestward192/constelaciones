@@ -8,6 +8,7 @@ import type { ConstellationInfo, SkyData } from "@/map/sky-data";
 import { normalizeUsername } from "@/sky/username";
 import Card, { type CardState } from "./Cards";
 import SearchBox from "./SearchBox";
+import PostalModal from "./PostalModal";
 import SidePanel from "./SidePanel";
 import TopBar from "./TopBar";
 import Viewer3DOverlay, { type ViewerTarget } from "./Viewer3DOverlay";
@@ -56,6 +57,8 @@ export default function SkyApp() {
   const [myStar, setMyStar] = useState<string | null>(readMyStar);
   const request = useRef(0);
   const [viewer, setViewer] = useState<ViewerTarget | null>(null);
+  const [postal, setPostal] = useState<string | null>(null);
+  const closePostal = useCallback(() => setPostal(null), []);
 
   // The 2D map pauses while the 3D view is open.
   const open3D = useCallback((target: ViewerTarget) => {
@@ -238,9 +241,11 @@ export default function SkyApp() {
           onClose={closeCard}
           onUsername={(username) => void openStar(username, { travel: true })}
           onView3D={open3D}
+          onPostal={setPostal}
         />
       )}
       {viewer && <Viewer3DOverlay target={viewer} onClose={close3D} />}
+      {postal && <PostalModal username={postal} onClose={closePostal} />}
     </div>
   );
 }

@@ -3,9 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // The postcard reads its fonts from disk at runtime: ship them with that route.
+  outputFileTracingIncludes: {
+    "/api/postal/[usuario]": ["./assets/fonts/**"],
+  },
   async rewrites() {
-    // Share links: /@usuario opens the sky centered on that star (the page reads the path).
-    return [{ source: "/@:handle", destination: "/" }];
+    // Share links: /@usuario keeps its address and is served by the star page.
+    return [{ source: "/@:usuario", destination: "/estrella/:usuario" }];
   },
 };
 

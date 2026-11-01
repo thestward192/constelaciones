@@ -117,3 +117,44 @@ test("the 3D view opens from the card, previews levels and closes", async ({ pag
   // Nothing of the 3D view stays behind: only the map's canvases.
   await expect(page.locator("canvas")).toHaveCount(2);
 });
+
+test("the postcard opens from the card and can be downloaded", async ({ page }) => {
+  await openSky(page);
+  const username = await searchAndPick(page, "prueba_r");
+  await card(page).getByRole("button", { name: "Ver postal de mi estrella" }).click();
+
+  const postal = page.getByRole("dialog", { name: "Postal de tu estrella" });
+  await expect(postal.getByRole("img", { name: `Postal de la estrella @${username}` })).toBeVisible(
+    {
+      timeout: 30_000,
+    },
+  );
+  const download = postal.getByRole("link", { name: "Descargar postal" });
+  await expect(download).toHaveAttribute("download", `constelaciones-${username}.png`);
+
+  await postal.getByRole("button", { name: "Cerrar" }).click();
+  await expect(postal).toBeHidden();
+});
+
+test("the postcard is a 1080 × 1920 image and the share link uses it as preview", async ({
+  page,
+  request,
+}) => {
+  await openSky(page);
+  const username = await searchAndPick(page, "prueba_r");
+
+  const image = await request.get(`/api/postal/${username}`);
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toBe("image/png");
+  const png = await image.body();
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1920]);
+
+  const html = await (await request.get(`/@${username}`)).text();
+  expect(html).toContain(`<title>@${username} · Constelaciones</title>`);
+  expect(html).toMatch(
+    new RegExp(`og:image" content="[^"]*/api/postal/${username.replace(".", "\.")}"`),
+  );
+
+  expect((await request.get("/api/postal/nadie_tiene_este_nombre")).status()).toBe(404);
+  expect((await request.get("/cualquier-cosa")).status()).toBe(404);
+});
