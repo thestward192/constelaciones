@@ -186,6 +186,25 @@ async function publishConstellation(
   version: number,
   edgesByFigure: Map<number, [number, number][]>,
 ) {
+  const file = await buildConstellationFileFromDb(db, id, version, edgesByFigure);
+  await storage.put(paths.constellation(id, version), JSON.stringify(file), {
+    contentType: "application/json",
+    cacheSeconds: IMMUTABLE,
+  });
+  const { error } = await db.from("constellations").update({ file_version: version }).eq("id", id);
+  if (error) throw new Error(`Could not update constellation ${id}: ${error.message}`);
+
+  // Keep the current and the previous version (a page may still hold the previous index).
+  if (version > 2) await storage.remove([paths.constellation(id, version - 2)]).catch(() => {});
+}
+
+/** A constellation's public file, built straight from the database (also used for admin images). */
+export async function buildConstellationFileFromDb(
+  db: SupabaseClient,
+  id: number,
+  version: number,
+  edgesByFigure?: Map<number, [number, number][]>,
+) {
   const c = must(
     await db.from("constellations").select(CONSTELLATION_COLUMNS).eq("id", id).single(),
     `constellation ${id}`,
@@ -210,19 +229,18 @@ async function publishConstellation(
         .eq("is_anchor", true),
       `anchors of ${id}`,
     ) as { anchor_index: number; x: number; y: number }[];
-    figure = { anchors, edges: edgesByFigure.get(c.figure_id) ?? [] };
+    let edges = edgesByFigure?.get(c.figure_id);
+    if (!edges) {
+      const row = must(
+        await db.from("figures").select("edges").eq("id", c.figure_id).single(),
+        `figure ${c.figure_id}`,
+      ) as { edges: [number, number][] };
+      edges = row.edges;
+    }
+    figure = { anchors, edges };
   }
 
-  const file = buildConstellationFile(c, version, stars, figure);
-  await storage.put(paths.constellation(id, version), JSON.stringify(file), {
-    contentType: "application/json",
-    cacheSeconds: IMMUTABLE,
-  });
-  const { error } = await db.from("constellations").update({ file_version: version }).eq("id", id);
-  if (error) throw new Error(`Could not update constellation ${id}: ${error.message}`);
-
-  // Keep the current and the previous version (a page may still hold the previous index).
-  if (version > 2) await storage.remove([paths.constellation(id, version - 2)]).catch(() => {});
+  return buildConstellationFile(c, version, stars, figure);
 }
 
 async function indexContent(

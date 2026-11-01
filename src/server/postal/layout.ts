@@ -45,12 +45,12 @@ export function postalTexts(
  */
 export function constellationSvg(
   file: ConstellationFile,
-  star: { username: string; x: number; y: number; level: number },
+  star: { username: string; x: number; y: number; level: number } | null,
   size: number,
 ): string {
-  const stars = file.stars.filter((s) => s[1] !== star.username);
-  const xs = [...stars.map((s) => s[2]), star.x];
-  const ys = [...stars.map((s) => s[3]), star.y];
+  const stars = star ? file.stars.filter((s) => s[1] !== star.username) : file.stars;
+  const xs = [...stars.map((s) => s[2]), ...(star ? [star.x] : [])];
+  const ys = [...stars.map((s) => s[3]), ...(star ? [star.y] : [])];
   const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
   const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
   const extent = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1);
@@ -85,12 +85,16 @@ export function constellationSvg(
     )
     .join("");
 
-  const mx = X(star.x);
-  const my = Y(star.y);
-  const marker =
-    `<circle cx="${mx}" cy="${my}" r="${(glowOf(star.level) * 1.8).toFixed(1)}" fill="url(#l6)"/>` +
-    `<circle cx="${mx}" cy="${my}" r="30" fill="none" stroke="#e8cb8f" stroke-width="3"/>` +
-    `<circle cx="${mx}" cy="${my}" r="44" fill="none" stroke="#e8cb8f" stroke-width="1.5" stroke-opacity=".6"/>`;
+  const marker = star ? highlight(X(star.x), Y(star.y), glowOf(star.level)) : "";
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><defs>${defs}</defs><g stroke="rgba(200,212,240,0.38)" stroke-width="2">${lines}</g>${dots}${marker}</svg>`;
+}
+
+/** Double gold circle around the person's star, with a brighter glow. */
+function highlight(mx: string, my: string, glow: number): string {
+  return (
+    `<circle cx="${mx}" cy="${my}" r="${(glow * 1.8).toFixed(1)}" fill="url(#l6)"/>` +
+    `<circle cx="${mx}" cy="${my}" r="30" fill="none" stroke="#e8cb8f" stroke-width="3"/>` +
+    `<circle cx="${mx}" cy="${my}" r="44" fill="none" stroke="#e8cb8f" stroke-width="1.5" stroke-opacity=".6"/>`
+  );
 }

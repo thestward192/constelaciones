@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   // The postcard reads its fonts from disk at runtime: ship them with that route.
   outputFileTracingIncludes: {
     "/api/postal/[usuario]": ["./assets/fonts/**"],
+    "/api/admin/constellation-image/[id]": ["./assets/fonts/**"],
   },
   async rewrites() {
     // Share links: /@usuario keeps its address and is served by the star page.

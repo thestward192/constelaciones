@@ -1,7 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { loadPostalData, PostalNotFound } from "@/server/postal/data";
+import { imageFonts } from "@/server/postal/fonts";
 import {
   constellationSvg,
   POSTAL_HEIGHT,
@@ -13,14 +12,6 @@ import { normalizeUsername } from "@/sky/username";
 
 // Postcard for Instagram stories, 1080 × 1920 (docs/constelaciones-diseno.md, section 8).
 // Also the preview image when a /@usuario link is shared.
-
-const font = (file: string) => readFile(join(process.cwd(), "assets", "fonts", file));
-const fonts = Promise.all([
-  font("cormorant-garamond-latin-600-normal.woff"),
-  font("ibm-plex-sans-latin-500-normal.woff"),
-  font("ibm-plex-mono-latin-400-normal.woff"),
-  font("ibm-plex-mono-latin-500-normal.woff"),
-]);
 
 const INK = "#eceff6";
 const INK_2 = "#a3adc4";
@@ -48,7 +39,7 @@ export async function GET(_request: Request, context: RouteContext<"/api/postal/
   const { details, file } = data;
   const texts = postalTexts(details.username, file, details.slot, details.bornDay, details.level);
   const svg = constellationSvg(file, details, DRAWING);
-  const [display, sans, mono, monoMedium] = await fonts;
+  const fonts = await imageFonts();
 
   return new ImageResponse(
     <div
@@ -116,12 +107,7 @@ export async function GET(_request: Request, context: RouteContext<"/api/postal/
     {
       width: POSTAL_WIDTH,
       height: POSTAL_HEIGHT,
-      fonts: [
-        { name: "Cormorant", data: display, weight: 600, style: "normal" },
-        { name: "Plex Sans", data: sans, weight: 500, style: "normal" },
-        { name: "Plex Mono", data: mono, weight: 400, style: "normal" },
-        { name: "Plex Mono Medium", data: monoMedium, weight: 500, style: "normal" },
-      ],
+      fonts,
       headers: {
         // Levels change at most once a day; the CDN may keep it an hour.
         "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",

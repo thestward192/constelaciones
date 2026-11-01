@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 9 — Panel de administración
+**Siguiente fase:** Fase 10 — Conexión con Instagram
 
 ## Fase 0 — Preparación del proyecto
 
@@ -111,19 +111,24 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 9 — Panel de administración
 
-- [ ] `/admin` con inicio de sesión por correo; solo correos de `ADMIN_EMAILS`.
-- [ ] Días: crear el día N, asociarlo a un video, cerrarlo.
-- [ ] Importación manual: pegar lista o subir CSV de comentarios.
-- [ ] Botón "Procesar ahora" y "Publicar ahora", con estado de la última ejecución.
-- [ ] Moderación: aprobar u ocultar nombres en revisión; editar palabras bloqueadas.
-- [ ] Reto del día: elegir tipo, meta y ver progreso.
-- [ ] Estrellas fugaces: definir cuántas y lanzar el sorteo (no repetible); mostrar los ganadores para el video.
-- [ ] Nombre de constelación: editar el nombre elegido por la comunidad.
-- [ ] Estadísticas del día y totales.
-- [ ] Exportar imagen de la constelación del día (apoyo para el video).
+- [x] `/admin` con inicio de sesión por correo; solo correos de `ADMIN_EMAILS`.
+- [x] Días: crear el día N, asociarlo a un video, cerrarlo.
+- [x] Importación manual: pegar lista o subir CSV de comentarios.
+- [x] Botón "Procesar ahora" y "Publicar ahora", con estado de la última ejecución.
+- [x] Moderación: aprobar u ocultar nombres en revisión; editar palabras bloqueadas.
+- [x] Reto del día: elegir tipo, meta y ver progreso.
+- [x] Estrellas fugaces: definir cuántas y lanzar el sorteo (no repetible); mostrar los ganadores para el video.
+- [x] Nombre de constelación: editar el nombre elegido por la comunidad.
+- [x] Estadísticas del día y totales.
+- [x] Exportar imagen de la constelación del día (apoyo para el video).
 
 ## Notas para el lanzamiento
 
+- Agregar `https://<dominio>/admin/auth/callback` a las Redirect URLs de Supabase Auth.
 - Definir `NEXT_PUBLIC_SITE_URL` con el dominio para las vistas previas al compartir.
 - Borrar los datos de prueba (`prueba_*`) antes de lanzar (fase 13).
 - La clave `service_role` y la contraseña de la base de datos se compartieron en un chat: cambiarlas antes de lanzar (Supabase > Project Settings > API Keys y Database).
+
+**Resumen:** Panel en `/admin` (páginas Día, Días, Moderación y Constelaciones) con inicio de sesión por enlace al correo (Supabase Auth y `@supabase/ssr`); solo entran los correos de `ADMIN_EMAILS` (`stwardserrano@gmail.com`), y cada página y cada acción lo comprueba en el servidor. El formulario de entrada responde igual para cualquier correo, así no revela quién tiene acceso. Migración `20261104000001_admin.sql`: historial de tareas (`job_runs`), candidatos y registro del sorteo (no repetible; el sorteo se hace en el servidor con `crypto.randomInt`), estadísticas del día, moderación y nombres. Importar acepta lista pegada o CSV (`src/server/admin/comment-list.ts`) y no permite importar en un día cerrado. Las rutas automáticas también dejan registro. Imagen vertical de cualquier constelación para el video (`/api/admin/constellation-image/[id]`, solo con sesión). 15 pruebas nuevas (205 en total) y 3 de Playwright, entre ellas un día completo hecho solo desde el panel (25 de pantalla en total). Las pruebas crean días y estrellas `prueba_e2e_*` en los datos de prueba.
+
+**Pendiente de la dueña:** en Supabase > Authentication > URL Configuration, agregar `http://localhost:3000/admin/auth/callback` a Redirect URLs (y el dominio final en la fase 13).

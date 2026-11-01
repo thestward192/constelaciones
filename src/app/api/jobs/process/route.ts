@@ -1,4 +1,5 @@
 import { isAuthorizedJob, unauthorized } from "@/server/auth";
+import { runJob } from "@/server/admin/jobs";
 import { processInbox, supabaseStore } from "@/server/processing";
 import { publishSky } from "@/server/publish/publish";
 import { supabaseStorage } from "@/server/storage";
@@ -10,8 +11,8 @@ export const maxDuration = 300;
 export async function POST(request: Request) {
   if (!isAuthorizedJob(request)) return unauthorized();
   const db = getAdminClient();
-  const processed = await processInbox(supabaseStore(db));
+  const processed = await runJob(db, "process", () => processInbox(supabaseStore(db)));
   if (processed.busy) return Response.json({ processed }, { status: 409 });
-  const published = await publishSky(db, supabaseStorage(db));
+  const published = await runJob(db, "publish", () => publishSky(db, supabaseStorage(db)));
   return Response.json({ processed, published });
 }

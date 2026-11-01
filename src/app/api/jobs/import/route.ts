@@ -1,4 +1,5 @@
 import { isAuthorizedJob, unauthorized } from "@/server/auth";
+import { runJob } from "@/server/admin/jobs";
 import { ImportError, importComments, type IncomingComment } from "@/server/import";
 import { getAdminClient } from "@/server/supabase/admin";
 
@@ -14,10 +15,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const summary = await importComments(
-      getAdminClient(),
-      Number(body.day),
-      body.comments as IncomingComment[],
+    const db = getAdminClient();
+    const summary = await runJob(db, "import", () =>
+      importComments(db, Number(body.day), body.comments as IncomingComment[]),
     );
     return Response.json(summary);
   } catch (error) {

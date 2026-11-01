@@ -72,6 +72,9 @@ export async function importComments(
 
   const { rows, invalid } = toInboxRows(day, comments);
 
+  const { data: existing } = await db.from("days").select("closed").eq("day", day).maybeSingle();
+  if (existing?.closed)
+    throw new ImportError(`El día ${day} está cerrado. Ábrelo de nuevo para importar.`);
   const { error: dayError } = await db.from("days").upsert({ day }, { ignoreDuplicates: true });
   if (dayError) throw new Error(`Could not create day ${day}: ${dayError.message}`);
 
