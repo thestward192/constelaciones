@@ -6,6 +6,7 @@ import type { StarDetails } from "@/lib/sky-api";
 import type { SkyData } from "@/map/sky-data";
 import { LEVEL_STYLE, toRoman } from "@/map/style";
 import { invitationRewards, LEVELS, nextLevel } from "@/sky/levels";
+import type { ViewerTarget } from "./Viewer3DOverlay";
 import styles from "./app.module.css";
 
 export type CardState =
@@ -19,18 +20,25 @@ interface Props {
   data: SkyData;
   onClose: () => void;
   onUsername: (username: string) => void;
+  onView3D: (target: ViewerTarget) => void;
 }
 
 /** Right card on desktop, sheet from the bottom on phones: a star, the Sun or a planet. */
-export default function Card({ card, data, onClose, onUsername }: Props) {
+export default function Card({ card, data, onClose, onUsername, onView3D }: Props) {
   return (
     <article className={styles.starCard} aria-live="polite" aria-label="Detalle">
       {card.kind === "star" ? (
-        <StarBody card={card} data={data} onClose={onClose} onUsername={onUsername} />
+        <StarBody
+          card={card}
+          data={data}
+          onClose={onClose}
+          onUsername={onUsername}
+          onView3D={onView3D}
+        />
       ) : card.kind === "sun" ? (
-        <SunBody data={data} onClose={onClose} />
+        <SunBody data={data} onClose={onClose} onView3D={onView3D} />
       ) : (
-        <PlanetBody name={card.name} data={data} onClose={onClose} />
+        <PlanetBody name={card.name} data={data} onClose={onClose} onView3D={onView3D} />
       )}
     </article>
   );
@@ -70,11 +78,13 @@ function StarBody({
   data,
   onClose,
   onUsername,
+  onView3D,
 }: {
   card: Extract<CardState, { kind: "star" }>;
   data: SkyData;
   onClose: () => void;
   onUsername: (u: string) => void;
+  onView3D: (target: ViewerTarget) => void;
 }) {
   if (card.status !== "ready") {
     const message =
@@ -183,7 +193,11 @@ function StarBody({
         </div>
       </div>
 
-      <button className={styles.btn3d} type="button" disabled title="Disponible pronto">
+      <button
+        className={styles.btn3d}
+        type="button"
+        onClick={() => onView3D({ kind: "star", details: d })}
+      >
         Ver mi estrella en 3D
       </button>
       <button className={styles.btnPostal} type="button" disabled title="Disponible pronto">
@@ -193,7 +207,15 @@ function StarBody({
   );
 }
 
-function SunBody({ data, onClose }: { data: SkyData; onClose: () => void }) {
+function SunBody({
+  data,
+  onClose,
+  onView3D,
+}: {
+  data: SkyData;
+  onClose: () => void;
+  onView3D: (target: ViewerTarget) => void;
+}) {
   const { index } = data;
   const stage = index.stages[Math.min(index.stage, index.stages.length) - 1];
   return (
@@ -223,11 +245,28 @@ function SunBody({ data, onClose }: { data: SkyData; onClose: () => void }) {
           </b>
         </div>
       </div>
+      <button
+        className={styles.btn3d}
+        type="button"
+        onClick={() => onView3D({ kind: "sun", totalStars: index.totalStars })}
+      >
+        Ver el Sol en 3D
+      </button>
     </>
   );
 }
 
-function PlanetBody({ name, data, onClose }: { name: string; data: SkyData; onClose: () => void }) {
+function PlanetBody({
+  name,
+  data,
+  onClose,
+  onView3D,
+}: {
+  name: string;
+  data: SkyData;
+  onClose: () => void;
+  onView3D: (target: ViewerTarget) => void;
+}) {
   const planet = data.index.planets.find((p) => p[1] === name);
   if (!planet) return <Head eyebrow="Planeta" title={name} onClose={onClose} />;
   const [, , threshold, , unlockedDay] = planet;
@@ -264,6 +303,13 @@ function PlanetBody({ name, data, onClose }: { name: string; data: SkyData; onCl
           </div>
         )}
       </div>
+      <button
+        className={styles.btn3d}
+        type="button"
+        onClick={() => onView3D({ kind: "planet", name, threshold, unlockedDay })}
+      >
+        {unlockedDay !== null ? `Ver ${name} en 3D` : "Vista previa en 3D"}
+      </button>
     </>
   );
 }

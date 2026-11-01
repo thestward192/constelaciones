@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 7 — Vista 3D
+**Siguiente fase:** Fase 8 — Postal
 
 ## Fase 0 — Preparación del proyecto
 
@@ -91,13 +91,15 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 7 — Vista 3D
 
-- [ ] three.js cargado solo al abrir la vista.
-- [ ] Un modelo de estrella con parámetros por nivel (tabla 7.1 del documento de diseño): superficie animada en la tarjeta gráfica, atmósfera, corona, destellos, onda expansiva.
-- [ ] Extras: anillos, satélite, corona de puntos, cometa con estela.
-- [ ] Barra de evolución con vista previa de niveles futuros.
-- [ ] Sol y planetas también abren en 3D con el mismo sistema.
-- [ ] Mapa 2D en pausa mientras el 3D está abierto; el 3D se detiene al cerrar y libera memoria.
-- [ ] Mensaje claro si el dispositivo no soporta 3D.
+- [x] three.js cargado solo al abrir la vista.
+- [x] Un modelo de estrella con parámetros por nivel (tabla 7.1 del documento de diseño): superficie animada en la tarjeta gráfica, atmósfera, corona, destellos, onda expansiva.
+- [x] Extras: anillos, satélite, corona de puntos, cometa con estela.
+- [x] Barra de evolución con vista previa de niveles futuros.
+- [x] Sol y planetas también abren en 3D con el mismo sistema.
+- [x] Mapa 2D en pausa mientras el 3D está abierto; el 3D se detiene al cerrar y libera memoria.
+- [x] Mensaje claro si el dispositivo no soporta 3D.
+
+**Resumen:** Vista 3D en `src/viewer3d` con three.js 0.187: parámetros por nivel, Sol y planetas (`params.ts`, tabla 7.1), sombreadores portados del prototipo con modo planeta iluminado de lado y bandas en gigantes gaseosos (`shaders.ts`), y el visor (`viewer.ts`) que construye un solo modelo desde parámetros: superficie animada en la tarjeta gráfica, atmósfera, corona, destellos, onda expansiva, anillos, satélite, corona de puntos, cometa y anillos de Saturno. Interfaz en `src/components/app/Viewer3DOverlay.tsx` (información, barra de evolución con vista previa, cerrar con botón o Esc, mensajes si falla o si el dispositivo no soporta 3D). three.js (134 KB comprimido) se descarga solo al abrir la vista; el mapa 2D se pausa mientras está abierta y al cerrar se libera todo (renderizador, geometrías, materiales, texturas y contexto WebGL). `npm run measure:viewer`: 20 aperturas y cierres con la memoria estable en 31,6 MB y sin lienzos sobrantes. 8 pruebas nuevas (183 en total) y 1 de Playwright (16 en total).
 
 ## Fase 8 — Postal
 

@@ -97,3 +97,23 @@ test("no horizontal overflow at 360 px, with and without a card", async ({ page 
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(360);
 });
+
+test("the 3D view opens from the card, previews levels and closes", async ({ page }) => {
+  await openSky(page);
+  await searchAndPick(page, "prueba_r");
+  await card(page).getByRole("button", { name: "Ver mi estrella en 3D" }).click();
+
+  const viewer = page.getByRole("dialog", { name: "Vista 3D" });
+  await expect(viewer.locator("canvas")).toBeVisible({ timeout: 30_000 });
+  await expect(viewer).toContainText("Tu estrella en 3D");
+  await expect(viewer).toContainText("Tu nivel");
+
+  await viewer.getByRole("button", { name: /Supernova/ }).click();
+  await expect(viewer).toContainText("Así se verá tu estrella al llegar a 365 días comentando.");
+  await expect(viewer).toContainText("Vista previa");
+
+  await viewer.getByRole("button", { name: "Cerrar vista 3D" }).click();
+  await expect(viewer).toBeHidden();
+  // Nothing of the 3D view stays behind: only the map's canvases.
+  await expect(page.locator("canvas")).toHaveCount(2);
+});

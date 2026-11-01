@@ -10,6 +10,7 @@ import Card, { type CardState } from "./Cards";
 import SearchBox from "./SearchBox";
 import SidePanel from "./SidePanel";
 import TopBar from "./TopBar";
+import Viewer3DOverlay, { type ViewerTarget } from "./Viewer3DOverlay";
 import styles from "./app.module.css";
 
 const MY_STAR_KEY = "constelaciones:mi-estrella";
@@ -54,6 +55,17 @@ export default function SkyApp() {
   // Only shown once the sky has loaded, so reading storage here cannot mismatch the server render.
   const [myStar, setMyStar] = useState<string | null>(readMyStar);
   const request = useRef(0);
+  const [viewer, setViewer] = useState<ViewerTarget | null>(null);
+
+  // The 2D map pauses while the 3D view is open.
+  const open3D = useCallback((target: ViewerTarget) => {
+    mapRef.current?.pause();
+    setViewer(target);
+  }, []);
+  const close3D = useCallback(() => {
+    setViewer(null);
+    mapRef.current?.resume();
+  }, []);
 
   const mobile = useSyncExternalStore(subscribeMobile, isMobile, () => false);
 
@@ -225,8 +237,10 @@ export default function SkyApp() {
           data={data}
           onClose={closeCard}
           onUsername={(username) => void openStar(username, { travel: true })}
+          onView3D={open3D}
         />
       )}
+      {viewer && <Viewer3DOverlay target={viewer} onClose={close3D} />}
     </div>
   );
 }
