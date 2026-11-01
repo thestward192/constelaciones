@@ -1,6 +1,8 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { beforeAll, describe, expect, it } from "vitest";
 import { applyMigrations, applySeeds, migrationFiles, readFigures } from "../../scripts/db/runner";
+import { planetOrbitRadius } from "@/sky/geometry";
+import { levelForDays } from "@/sky/levels";
 import { asRole, createTestDatabase } from "./pglite";
 
 let pg: PGlite;
@@ -58,6 +60,22 @@ describe("migrations and seeds", () => {
       "select array_agg(star_level(d) order by d) as l from unnest(array[1,2,3,7,14,15,30,99,100,365,400]) d",
     );
     expect(rows[0].l).toEqual([0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6]);
+  });
+
+  it("agrees with the sky engine on every level", async () => {
+    const { rows } = await pg.query<{ l: number[] }>(
+      "select array_agg(star_level(d) order by d) as l from generate_series(1, 400) d",
+    );
+    expect(rows[0].l).toEqual(Array.from({ length: 400 }, (_, i) => levelForDays(i + 1)));
+  });
+
+  it("stores each planet's orbit radius from the sky engine", async () => {
+    const { rows } = await pg.query<{ threshold: number; orbit_radius: number }>(
+      "select threshold, orbit_radius from planets",
+    );
+    for (const row of rows) {
+      expect(row.orbit_radius).toBeCloseTo(planetOrbitRadius(row.threshold), 6);
+    }
   });
 });
 

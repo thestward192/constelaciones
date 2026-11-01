@@ -1,18 +1,12 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Figure } from "../../src/sky/figures";
+import { planetOrbitRadius } from "../../src/sky/geometry";
 
 // Minimal SQL interface shared by node-postgres (Supabase) and PGlite (tests).
 export interface SqlRunner {
   exec(sql: string): Promise<void>;
   query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
-}
-
-export interface Figure {
-  slug: string;
-  name: string;
-  anchors: [number, number][];
-  edges: [number, number][];
-  handmade: boolean;
 }
 
 const root = join(import.meta.dirname, "..", "..", "supabase");
@@ -88,6 +82,15 @@ export async function applySeeds(db: SqlRunner): Promise<void> {
       .filter((f) => f.endsWith(".sql"))
       .sort()) {
       await db.exec(readFileSync(join(seedDir, file), "utf8"));
+    }
+    const planets = await db.query<{ id: number; threshold: number }>(
+      "select id, threshold from planets",
+    );
+    for (const planet of planets) {
+      await db.query("update planets set orbit_radius = $2 where id = $1", [
+        planet.id,
+        planetOrbitRadius(planet.threshold),
+      ]);
     }
     await db.exec("commit");
   } catch (error) {

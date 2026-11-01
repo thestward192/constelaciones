@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 2 — Motor del cielo (lógica pura)
+**Siguiente fase:** Fase 3 — Procesamiento diario
 
 ## Fase 0 — Preparación del proyecto
 
@@ -32,12 +32,14 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 2 — Motor del cielo (lógica pura)
 
-- [ ] Normalización de usuarios y extracción de menciones (`@usuario`) de un texto.
-- [ ] Cálculo de nivel, días para el siguiente nivel y anillos.
-- [ ] Posición de la constelación `n` en la espiral (sección 5) y radio de órbita de cada planeta.
-- [ ] Generación de las 300 posiciones de una constelación a partir de una figura y una semilla.
-- [ ] Generador aleatorio con semilla (reproducible).
-- [ ] Pruebas unitarias de todo lo anterior, incluyendo: misma semilla → mismo resultado; constelaciones vecinas no se superponen en las primeras 10.000.
+- [x] Normalización de usuarios y extracción de menciones (`@usuario`) de un texto.
+- [x] Cálculo de nivel, días para el siguiente nivel y anillos.
+- [x] Posición de la constelación `n` en la espiral (sección 5) y radio de órbita de cada planeta.
+- [x] Generación de las 300 posiciones de una constelación a partir de una figura y una semilla.
+- [x] Generador aleatorio con semilla (reproducible).
+- [x] Pruebas unitarias de todo lo anterior, incluyendo: misma semilla → mismo resultado; constelaciones vecinas no se superponen en las primeras 10.000.
+
+**Resumen:** Motor del cielo en `src/sky` (funciones puras): generador con semilla (`random.ts`), usuarios y menciones (`username.ts`), niveles, días para el siguiente y anillos (`levels.ts`), espiral dorada con k = 400 y radio de constelación 300, colocación con rotación (±30°) y escala por semilla, órbitas de planetas (`geometry.ts`), elección y variación de figuras (`figures.ts`) y las 300 posiciones (anclas + líneas + halo, barajadas, sin estrellas encimadas) (`slots.ts`). Se usa el ángulo dorado exacto (137,50776°): así la distancia mínima entre vecinas no baja nunca (comprobado hasta 300.000). El radio de cada órbita queda guardado en `planets.orbit_radius`. 71 pruebas nuevas (119 en total). `npm run render:spiral` dibuja las primeras 200 constelaciones en `scripts/output/`.
 
 ## Fase 3 — Procesamiento diario
 
