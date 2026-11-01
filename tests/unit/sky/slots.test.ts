@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFigures } from "../../../scripts/db/runner";
-import { chooseFigure, varyFigure } from "@/sky/figures";
+import { chooseFigure, figureForConstellation, varyFigure } from "@/sky/figures";
 import { constellationPlacement, STARS_PER_CONSTELLATION } from "@/sky/geometry";
 import { createRng } from "@/sky/random";
 import { generateSlots } from "@/sky/slots";
@@ -8,9 +8,7 @@ import { generateSlots } from "@/sky/slots";
 const figures = readFigures();
 
 function slotsFor(id: number) {
-  const choice = chooseFigure(id, figures.length);
-  const base = figures[choice.index];
-  const figure = choice.varied ? varyFigure(base, createRng(id, "vary")) : base;
+  const { figure } = figureForConstellation(id, figures);
   return {
     figure,
     placement: constellationPlacement(id),

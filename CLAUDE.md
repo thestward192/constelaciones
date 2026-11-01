@@ -58,6 +58,7 @@ tests/e2e              pruebas de pantallas (Playwright)
 - `npm run test:e2e` — pruebas de pantallas (Playwright, escritorio y celular). La primera vez: `npx playwright install chromium`
 - `npm run db:migrate` — aplica migraciones (`supabase/migrations`) y semillas (`supabase/seed`) en la base de `SUPABASE_DB_URL`
 - `npm run render:spiral` — dibuja las primeras 200 constelaciones en `scripts/output/` para revisión visual
+- `npm run fake-data -- --days 31 --people 30000 --reset` — simula días con comentarios falsos (`prueba_*`) en Supabase, los procesa y comprueba los totales
 - `npm run test:remote` — comprueba la seguridad del proyecto real de Supabase con la clave pública
 
 Las pruebas de `tests/db` aplican las migraciones desde cero en PGlite (Postgres en memoria) con los

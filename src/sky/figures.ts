@@ -18,6 +18,16 @@ export function chooseFigure(id: number, figureCount: number): { index: number; 
   return { index: createRng(id, "figure").int(figureCount), varied: true };
 }
 
+/** The figure drawn by constellation `id`, already varied when it is a reuse. */
+export function figureForConstellation<F extends Figure>(
+  id: number,
+  figures: F[],
+): { figure: F; index: number } {
+  const { index, varied } = chooseFigure(id, figures.length);
+  const base = figures[index];
+  return { figure: varied ? { ...base, ...varyFigure(base, createRng(id, "vary")) } : base, index };
+}
+
 /** Soft deformation of a reused figure: mirror, stretch, shear and a gentle wave. */
 export function varyFigure(figure: Figure, rng: Rng): Figure {
   const mirror = rng.next() < 0.5 ? -1 : 1;

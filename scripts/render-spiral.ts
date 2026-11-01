@@ -6,15 +6,13 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { readFigures } from "./db/runner";
 import {
-  chooseFigure,
   constellationPlacement,
-  createRng,
+  figureForConstellation,
   generateSlots,
   normalizeAnchors,
   planetOrbitRadius,
   spiralRadius,
   toWorld,
-  varyFigure,
   CONSTELLATION_RADIUS,
 } from "../src/sky";
 
@@ -36,9 +34,7 @@ const PLANETS = [
 
 const constellations = Array.from({ length: count }, (_, i) => {
   const id = i + 1;
-  const choice = chooseFigure(id, figures.length);
-  const base = figures[choice.index];
-  const figure = choice.varied ? varyFigure(base, createRng(id, "vary")) : base;
+  const { figure } = figureForConstellation(id, figures);
   const placement = constellationPlacement(id);
   const anchors = normalizeAnchors(figure.anchors).map((p) => toWorld(p, placement));
   return { id, figure, placement, anchors, slots: generateSlots(figure, placement, id) };

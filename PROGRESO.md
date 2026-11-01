@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 3 — Procesamiento diario
+**Siguiente fase:** Fase 4 — Archivos públicos
 
 ## Fase 0 — Preparación del proyecto
 
@@ -43,10 +43,12 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Fase 3 — Procesamiento diario
 
-- [ ] Ruta protegida de importación manual: recibe una lista de comentarios (`usuario`, texto opcional) para un día y los guarda en `comment_inbox`.
-- [ ] Función de procesamiento (en PostgreSQL o en el servidor, con transacción y bloqueo para que nunca corran dos a la vez):
-- [ ] Script `scripts/generate-fake-data.ts`: simula N días con M comentarios, regresos e invitaciones (nombres inventados y marcados como prueba).
-- [ ] Pruebas: procesar dos veces no duplica; 301 personas nuevas → 1 constelación completa + 1 estrella en la siguiente; invitación con primera mención gana.
+- [x] Ruta protegida de importación manual: recibe una lista de comentarios (`usuario`, texto opcional) para un día y los guarda en `comment_inbox`.
+- [x] Función de procesamiento (en PostgreSQL o en el servidor, con transacción y bloqueo para que nunca corran dos a la vez):
+- [x] Script `scripts/generate-fake-data.ts`: simula N días con M comentarios, regresos e invitaciones (nombres inventados y marcados como prueba).
+- [x] Pruebas: procesar dos veces no duplica; 301 personas nuevas → 1 constelación completa + 1 estrella en la siguiente; invitación con primera mención gana.
+
+**Resumen:** Procesamiento en PostgreSQL (`process_inbox`, migración `20261101000001_processing.sql`) con bloqueo para que nunca corran dos a la vez, por lotes de 4.000 comentarios (límite de 8 s de la API de Supabase). Las posiciones las calcula el motor del cielo y se guardan con `open_constellation` antes de asignarlas; las constelaciones abiertas por adelantado quedan como `reserved`. Nueva columna `constellations.dirty` para la fase 4. Rutas protegidas con `CRON_SECRET`: `POST /api/jobs/import` (lista manual; guarda solo usuario y menciones, nunca el texto; crea el día si no existe) y `POST /api/jobs/process`. 17 pruebas nuevas (136 en total). Simulación con `npm run fake-data -- --days 31 --people 30000 --reset`: 141.124 comentarios, 30.000 estrellas, 100 constelaciones, 10.649 invitaciones, todo cuadra; el día más grande (10.881 comentarios) se procesó en 5,0 s. La base de Supabase queda con estos datos de prueba (usuarios `prueba_*`) para las fases 4 y 5.
 
 ## Fase 4 — Archivos públicos
 
@@ -112,4 +114,5 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 
 ## Notas para el lanzamiento
 
+- Borrar los datos de prueba (`prueba_*`) antes de lanzar (fase 13).
 - La clave `service_role` y la contraseña de la base de datos se compartieron en un chat: cambiarlas antes de lanzar (Supabase > Project Settings > API Keys y Database).
