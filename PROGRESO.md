@@ -3,7 +3,7 @@
 Estado de las fases del plan (`docs/constelaciones-implementacion.md`, sección 6).
 Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen corto.
 
-**Siguiente fase:** Fase 10 — Conexión con Instagram
+**Siguiente fase:** Fase 11 — Retos y desbloqueos
 
 ## Fase 0 — Preparación del proyecto
 
@@ -122,13 +122,27 @@ Al terminar cada fase se marcan sus tareas con `[x]` y se agrega un resumen cort
 - [x] Estadísticas del día y totales.
 - [x] Exportar imagen de la constelación del día (apoyo para el video).
 
+**Resumen:** Panel en `/admin` (páginas Día, Días, Moderación y Constelaciones) con inicio de sesión por enlace al correo (Supabase Auth y `@supabase/ssr`); solo entran los correos de `ADMIN_EMAILS` (`stwardserrano@gmail.com`), y cada página y cada acción lo comprueba en el servidor. El formulario de entrada responde igual para cualquier correo, así no revela quién tiene acceso. Migración `20261104000001_admin.sql`: historial de tareas (`job_runs`), candidatos y registro del sorteo (no repetible; el sorteo se hace en el servidor con `crypto.randomInt`), estadísticas del día, moderación y nombres. Importar acepta lista pegada o CSV (`src/server/admin/comment-list.ts`) y no permite importar en un día cerrado. Las rutas automáticas también dejan registro. Imagen vertical de cualquier constelación para el video (`/api/admin/constellation-image/[id]`, solo con sesión). 15 pruebas nuevas (205 en total) y 3 de Playwright, entre ellas un día completo hecho solo desde el panel (25 de pantalla en total). Las pruebas crean días y estrellas `prueba_e2e_*` en los datos de prueba.
+
+**Pendiente de la dueña:** en Supabase > Authentication > URL Configuration, agregar `http://localhost:3000/admin/auth/callback` a Redirect URLs (y el dominio final en la fase 13).
+
+## Fase 10 — Conexión con Instagram
+
+- [x] Guía paso a paso en `docs/instagram-setup.md` para la dueña: cuenta Profesional, app en Meta for Developers, inicio de sesión de Instagram, token de larga duración.
+- [x] En el panel: listar los videos recientes de la cuenta y elegir cuál es el día N.
+- [x] Importador: lee los comentarios del video del día con paginación (incluye respuestas), guarda usuario, texto y menciones en `comment_inbox`. Verificar en la documentación oficial vigente los campos exactos del comentario.
+- [x] Tarea programada cada hora (protegida con `CRON_SECRET`): importar → procesar → publicar. **Cambio acordado con la dueña:** la llama Supabase (pg_cron + pg_net) en vez de Vercel Cron, porque el plan gratis de Vercel solo permite tareas diarias.
+- [x] Renovación automática del token antes de que venza, y aviso en el panel si falla.
+- [x] Si la API falla, el panel lo muestra y la importación manual sigue disponible.
+
+**Resumen:** Cliente de la Instagram API con inicio de sesión de Instagram (`graph.instagram.com`, v26.0, revisada en la documentación oficial de octubre de 2026) en `src/server/instagram/`: lee todas las páginas de comentarios (50 por página) y sus respuestas, omite las respuestas de la propia cuenta y los comentarios ocultos, y guarda cada comentario una sola vez con el id de Instagram. Los días con un enlace del video se resuelven al id real buscando entre los videos recientes. El token vive en la tabla `instagram_auth` (migración `20261105000001_instagram.sql`, solo clave de servicio), se pega en la nueva página del panel **Instagram** (se comprueba antes de guardarlo) o en `IG_ACCESS_TOKEN`, y se renueva solo cada semana; si falla o le quedan menos de 14 días, el panel avisa. Ruta `POST /api/jobs/hourly` (renovar → importar los días abiertos → procesar → publicar; un error de Instagram no detiene el resto). Script `npm run cron:schedule` que programa la tarea en Supabase con el secreto guardado en Vault (probado: se programa, se revisa y se quita). En la página Día, botón **Importar desde Instagram**. 15 pruebas nuevas (220 en total), una prueba remota de la tarea completa con un Instagram falso (16 en total) y una de pantalla de la página Instagram (26 en total).
+
+**Pendiente de la dueña:** seguir `docs/instagram-setup.md`, pegar el token en `/admin/instagram` y probar con un comentario real (aceptación de la fase). La tarea automática de cada hora se activa en la fase 13, cuando exista el dominio.
+
 ## Notas para el lanzamiento
 
 - Agregar `https://<dominio>/admin/auth/callback` a las Redirect URLs de Supabase Auth.
 - Definir `NEXT_PUBLIC_SITE_URL` con el dominio para las vistas previas al compartir.
 - Borrar los datos de prueba (`prueba_*`) antes de lanzar (fase 13).
 - La clave `service_role` y la contraseña de la base de datos se compartieron en un chat: cambiarlas antes de lanzar (Supabase > Project Settings > API Keys y Database).
-
-**Resumen:** Panel en `/admin` (páginas Día, Días, Moderación y Constelaciones) con inicio de sesión por enlace al correo (Supabase Auth y `@supabase/ssr`); solo entran los correos de `ADMIN_EMAILS` (`stwardserrano@gmail.com`), y cada página y cada acción lo comprueba en el servidor. El formulario de entrada responde igual para cualquier correo, así no revela quién tiene acceso. Migración `20261104000001_admin.sql`: historial de tareas (`job_runs`), candidatos y registro del sorteo (no repetible; el sorteo se hace en el servidor con `crypto.randomInt`), estadísticas del día, moderación y nombres. Importar acepta lista pegada o CSV (`src/server/admin/comment-list.ts`) y no permite importar en un día cerrado. Las rutas automáticas también dejan registro. Imagen vertical de cualquier constelación para el video (`/api/admin/constellation-image/[id]`, solo con sesión). 15 pruebas nuevas (205 en total) y 3 de Playwright, entre ellas un día completo hecho solo desde el panel (25 de pantalla en total). Las pruebas crean días y estrellas `prueba_e2e_*` en los datos de prueba.
-
-**Pendiente de la dueña:** en Supabase > Authentication > URL Configuration, agregar `http://localhost:3000/admin/auth/callback` a Redirect URLs (y el dominio final en la fase 13).
+- Programar la tarea de cada hora con el dominio: `npm run cron:schedule -- --url https://<dominio>` (Supabase pg_cron; el plan gratis de Vercel solo permite tareas diarias).

@@ -13,6 +13,7 @@ privado permite a la dueña manejar el reto.
 - [docs/constelaciones-diseno.md](docs/constelaciones-diseno.md) — diseño visual, mapa, Sol, planetas, zoom y 3D.
 - [docs/constelaciones-diseno.html](docs/constelaciones-diseno.html) — prototipo visual de referencia.
 - [docs/constelaciones-implementacion.md](docs/constelaciones-implementacion.md) — plan por fases.
+- [docs/instagram-setup.md](docs/instagram-setup.md) — conectar Instagram (guía para la dueña y notas técnicas).
 - [PROGRESO.md](PROGRESO.md) — qué fase sigue y qué está hecho.
 
 ## Reglas de trabajo
@@ -62,7 +63,8 @@ tests/e2e              pruebas de pantallas (Playwright)
 - `npm run fake-sky` — escribe un cielo falso de 3 millones de estrellas en `public/dev-sky`; en desarrollo se abre con `http://localhost:3000/?sky=/dev-sky`
 - `npm run measure:map` — mide cuadros por segundo y peso de la primera carga como un celular (necesita un servidor en :3300; para el cielo falso compilar con `MSYS_NO_PATHCONV=1 NEXT_PUBLIC_SKY_FILES_URL=/dev-sky npm run build`)
 - `npm run measure:viewer` — abre y cierra la vista 3D 20 veces midiendo la memoria, y guarda capturas en `scripts/output/` (necesita un servidor en :3000)
-- `npm run test:remote` — comprueba la seguridad del proyecto real de Supabase con la clave pública
+- `npm run test:remote` — comprueba la seguridad del proyecto real de Supabase con la clave pública, y la tarea de cada hora con un Instagram falso
+- `npm run cron:schedule -- --url https://dominio` — programa en Supabase la tarea de cada hora (`--check`, `--status`, `--remove`)
 
 Las pruebas de `tests/db` aplican las migraciones desde cero en PGlite (Postgres en memoria) con los
 roles de Supabase, así que corren sin conexión. Las migraciones nunca se editan una vez aplicadas:

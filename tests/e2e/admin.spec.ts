@@ -70,7 +70,7 @@ test("the owner can run a whole day from the panel", async ({ page }, testInfo) 
   await page
     .getByLabel("Lista de comentarios")
     .fill([`${names[0]}: vengan @${names[1]}`, names[1], names[2], flagged].join("\n"));
-  await page.getByRole("button", { name: "Importar" }).click();
+  await page.getByRole("button", { name: "Importar", exact: true }).click();
   await expect(page.getByText("Recibidos 4, nuevos 4")).toBeVisible({ timeout: 20_000 });
 
   // 3. Process.
@@ -121,4 +121,27 @@ test("the owner can run a whole day from the panel", async ({ page }, testInfo) 
   await expect(page.getByRole("article", { name: "Detalle" })).toContainText(`@${names[0]}`, {
     timeout: 30_000,
   });
+});
+
+test("the Instagram page explains how to connect and checks the token", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "reads the shared connection: run it once");
+  const { data: connected } = await admin.from("instagram_auth").select("id").maybeSingle();
+  test.skip(Boolean(connected), "Instagram is already connected");
+  await signIn(page, ADMIN_EMAIL);
+  await page.goto("/admin/instagram");
+  await expect(page.getByText("Instagram no está conectado")).toBeVisible({ timeout: 20_000 });
+  await page
+    .getByLabel("Token de acceso de Instagram")
+    .fill("token-de-prueba-que-no-sirve-para-nada");
+  await page.getByRole("button", { name: "Guardar token" }).click();
+  // Instagram rejects it, and nothing is stored.
+  await expect(
+    page.getByText(/Instagram respondió con un error|venció o no es válido/),
+  ).toBeVisible({
+    timeout: 20_000,
+  });
+  const { data: after } = await admin.from("instagram_auth").select("id").maybeSingle();
+  expect(after).toBeNull();
 });

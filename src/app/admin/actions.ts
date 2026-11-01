@@ -7,6 +7,10 @@ import { drawShootingStars, DrawError } from "@/server/admin/draw";
 import { runJob } from "@/server/admin/jobs";
 import { createSessionClient, requireAdmin } from "@/server/admin/session";
 import { ImportError, importComments } from "@/server/import";
+import { InstagramApi, InstagramError } from "@/server/instagram/client";
+import { connectInstagram } from "@/server/instagram/hourly";
+import { importDayFromInstagram } from "@/server/instagram/import";
+import { recordTokenError, saveToken } from "@/server/instagram/token";
 import { processInbox, supabaseStore } from "@/server/processing";
 import { publishSky } from "@/server/publish/publish";
 import { supabaseStorage } from "@/server/storage";
@@ -27,7 +31,7 @@ const fail = (message: string): ActionState => ({ ok: false, message });
 
 /** A datetime-local value, which the form labels as UTC. */
 function utcInput(value: string): string {
-  return new Date(/[zZ]|[+-]dd:dd$/.test(value) ? value : `${value}Z`).toISOString();
+  return new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}Z`).toISOString();
 }
 
 function intField(form: FormData, name: string): number | null {
@@ -41,7 +45,12 @@ async function guarded(work: () => Promise<ActionState>): Promise<ActionState> {
   try {
     return await work();
   } catch (error) {
-    if (error instanceof ImportError || error instanceof DrawError) return fail(error.message);
+    if (
+      error instanceof ImportError ||
+      error instanceof DrawError ||
+      error instanceof InstagramError
+    )
+      return fail(error.message);
     console.error(error);
     return fail(
       "Algo salió mal. Inténtalo de nuevo; si se repite, revisa la conexión con Supabase.",
@@ -150,6 +159,68 @@ export async function publishNow(): Promise<ActionState> {
     return done(
       `Publicado: ${summary.constellationFiles} constelaciones actualizadas, índice v${summary.indexVersion}.`,
     );
+  });
+}
+
+// ---------------------------------------------------------------- instagram
+
+export async function saveInstagramToken(_: ActionState, form: FormData): Promise<ActionState> {
+  return guarded(async () => {
+    const token = String(form.get("token") ?? "").trim();
+    if (token.length < 20 || /\s/.test(token)) return fail("Pega el token completo, sin espacios.");
+    // Check it before replacing the current one.
+    const account = await new InstagramApi(token).me();
+    await saveToken(getAdminClient(), token, {
+      user_id: account.user_id,
+      username: account.username,
+    });
+    return done(`Conectado con @${account.username}.`);
+  });
+}
+
+export async function assignVideo(_: ActionState, form: FormData): Promise<ActionState> {
+  return guarded(async () => {
+    const day = intField(form, "day");
+    const mediaId = String(form.get("media_id") ?? "");
+    const timestamp = String(form.get("timestamp") ?? "");
+    if (!day || day < 1) return fail("El número de día debe ser 1 o más.");
+    if (!/^\d+$/.test(mediaId)) return fail("Video no válido.");
+    const db = getAdminClient();
+    const { data: existing } = await db
+      .from("days")
+      .select("published_at")
+      .eq("day", day)
+      .maybeSingle();
+    const publishedAt = existing?.published_at ?? (timestamp ? utcInput(timestamp) : null);
+    const { error } = await db
+      .from("days")
+      .upsert({ day, ig_media_id: mediaId, published_at: publishedAt ?? new Date().toISOString() });
+    if (error?.code === "23505") return fail("Ese video ya está asociado a otro día.");
+    if (error) return fail(error.message);
+    return done(existing ? `Video asociado al día ${day}.` : `Día ${day} creado con este video.`);
+  });
+}
+
+export async function importFromInstagram(_: ActionState, form: FormData): Promise<ActionState> {
+  return guarded(async () => {
+    const day = intField(form, "day");
+    if (!day) return fail("Falta el día.");
+    const db = getAdminClient();
+    const connection = await connectInstagram(db);
+    if (!connection)
+      return fail("Instagram no está conectado. Pega el token en la página Instagram.");
+    try {
+      const summary = await runJob(db, "import", () =>
+        importDayFromInstagram(db, connection.api, day, connection.token.username),
+      );
+      return done(
+        `Leídos ${summary.received} comentarios de Instagram, nuevos ${summary.stored}. Procesa para convertirlos en estrellas.`,
+      );
+    } catch (error) {
+      if (error instanceof InstagramError && error.tokenInvalid)
+        await recordTokenError(db, error.message);
+      throw error;
+    }
   });
 }
 

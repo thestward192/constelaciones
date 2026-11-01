@@ -15,6 +15,7 @@
     "test:e2e": "playwright test",
     "test:remote": "vitest run --project remote",
     "db:migrate": "tsx scripts/db-migrate.ts",
+    "cron:schedule": "tsx scripts/schedule-hourly.ts",
     "render:spiral": "tsx scripts/render-spiral.ts",
     "fake-data": "tsx scripts/generate-fake-data.ts",
     "fake-sky": "tsx scripts/generate-fake-sky.ts",

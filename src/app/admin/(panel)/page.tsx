@@ -13,9 +13,11 @@ import {
   skyTotals,
 } from "@/server/admin/queries";
 import { requireAdmin } from "@/server/admin/session";
+import { getInstagramToken, tokenStatus } from "@/server/instagram/token";
 import { getAdminClient } from "@/server/supabase/admin";
 import {
   drawShooting,
+  importFromInstagram,
   importList,
   processNow,
   publishNow,
@@ -59,13 +61,15 @@ async function DayContent({ searchParams }: Pick<PageProps<"/admin">, "searchPar
     );
   }
 
-  const [day, stats, runs, winners, completed] = await Promise.all([
+  const [day, stats, runs, winners, completed, instagram] = await Promise.all([
     getDay(dayNumber),
     dayStats(dayNumber),
     lastRuns(getAdminClient()),
     shootingWinners(dayNumber),
     constellationsCompletedOn(dayNumber),
+    getInstagramToken(getAdminClient()),
   ]);
+  const instagramWarning = instagram ? tokenStatus(instagram).warning : null;
   const known = days.map((d) => d.day);
   const previous = known.filter((d) => d < dayNumber).at(0);
   const next = known.filter((d) => d > dayNumber).at(-1);
@@ -86,6 +90,17 @@ async function DayContent({ searchParams }: Pick<PageProps<"/admin">, "searchPar
           {next && <Link href={`/admin?dia=${next}`}>Día {next} →</Link>}
         </nav>
       </div>
+
+      {instagramWarning && (
+        <div className={styles.card} style={{ marginBottom: 16 }} role="alert">
+          <p className={styles.formError}>
+            {instagramWarning}{" "}
+            <Link href="/admin/instagram" className={styles.link}>
+              Ir a Instagram
+            </Link>
+          </p>
+        </div>
+      )}
 
       {!day && (
         <div className={styles.card} style={{ marginBottom: 16 }}>
@@ -113,6 +128,28 @@ async function DayContent({ searchParams }: Pick<PageProps<"/admin">, "searchPar
       <div className={styles.grid}>
         <section className={styles.card}>
           <h2>Importar comentarios</h2>
+          {day?.ig_media_id ? (
+            <>
+              <p className={styles.muted}>
+                Los comentarios del video se importan solos cada hora mientras el día está abierto.
+                También puedes leerlos ahora.
+              </p>
+              <ActionForm action={importFromInstagram} submit="Importar desde Instagram">
+                <input type="hidden" name="day" value={dayNumber} />
+              </ActionForm>
+            </>
+          ) : (
+            <p className={styles.muted}>
+              Este día no tiene video. Asócialo en{" "}
+              <Link href="/admin/instagram" className={styles.link}>
+                Instagram
+              </Link>{" "}
+              para importar solo.
+            </p>
+          )}
+          <p className={styles.eyebrow} style={{ marginTop: 16 }}>
+            A mano
+          </p>
           <p className={styles.muted}>
             Un usuario por línea y, si quieres, el comentario después de dos puntos o una coma (así
             se cuentan las invitaciones). También puedes subir un CSV. Importar dos veces la misma

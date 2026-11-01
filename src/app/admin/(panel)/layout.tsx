@@ -17,6 +17,7 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
         <nav className={styles.nav} aria-label="Secciones del panel">
           <Link href="/admin">Día</Link>
           <Link href="/admin/dias">Días</Link>
+          <Link href="/admin/instagram">Instagram</Link>
           <Link href="/admin/moderacion">Moderación</Link>
           <Link href="/admin/constelaciones">Constelaciones</Link>
           <Link href="/">Ver la página</Link>

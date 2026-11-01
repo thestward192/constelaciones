@@ -119,8 +119,27 @@ describe("moderation and names", () => {
       "select set_star_status(1, 'hidden')",
       "select rename_constellation(1, 'x')",
       "select * from job_runs",
+      "select * from instagram_auth",
     ]) {
       await expect(asRole(pg, "anon", () => pg.query(sql))).rejects.toThrow(/permission denied/);
     }
+  });
+});
+
+describe("instagram token", () => {
+  it("keeps a single row that only the service role can read", async () => {
+    await pg.query("insert into instagram_auth (access_token) values ('abc')");
+    await expect(
+      pg.query("insert into instagram_auth (id, access_token) values (2, 'x')"),
+    ).rejects.toThrow();
+    for (const role of ["anon", "authenticated"]) {
+      await expect(
+        asRole(pg, role, () => pg.query("select access_token from instagram_auth")),
+      ).rejects.toThrow(/permission denied/);
+    }
+    const rows = await asRole(pg, "service_role", () =>
+      pg.query<{ access_token: string }>("select access_token from instagram_auth"),
+    );
+    expect(rows.rows).toEqual([{ access_token: "abc" }]);
   });
 });

@@ -20,7 +20,7 @@ export interface InboxRow {
   username: string;
   mentions: string[];
   commented_at: string;
-  source: "manual";
+  source: "manual" | "api";
 }
 
 const MAX_COMMENTS = 50_000;
@@ -78,6 +78,11 @@ export async function importComments(
   const { error: dayError } = await db.from("days").upsert({ day }, { ignoreDuplicates: true });
   if (dayError) throw new Error(`Could not create day ${day}: ${dayError.message}`);
 
+  return { received: comments.length, stored: await storeInboxRows(db, rows), invalid };
+}
+
+/** Stores rows in comment_inbox; ones already there are left alone. Returns how many were new. */
+export async function storeInboxRows(db: SupabaseClient, rows: InboxRow[]): Promise<number> {
   let stored = 0;
   for (let i = 0; i < rows.length; i += CHUNK) {
     const { data, error } = await db
@@ -87,7 +92,7 @@ export async function importComments(
     if (error) throw new Error(`Could not store comments: ${error.message}`);
     stored += data.length;
   }
-  return { received: comments.length, stored, invalid };
+  return stored;
 }
 
 /** A problem with the request itself (shown to whoever sent it). */

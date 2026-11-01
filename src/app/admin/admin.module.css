@@ -367,6 +367,37 @@
   cursor: pointer;
 }
 
+.mediaItem {
+  justify-content: flex-start;
+}
+
+.thumb {
+  flex: none;
+  width: 44px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--sky-2);
+}
+
+.mediaText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mediaText a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mediaText small {
+  margin: 0;
+}
+
 .runs {
   margin: 10px 0 0;
   font-size: 12px;

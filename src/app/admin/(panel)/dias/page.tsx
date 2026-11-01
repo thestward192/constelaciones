@@ -33,8 +33,12 @@ async function DaysContent() {
         <section className={styles.card}>
           <h2>Crear el día {nextDay}</h2>
           <p className={styles.muted}>
-            Cada video es un día. Puedes pegar el enlace o el código del video de Instagram (en la
-            fase 10 se elegirá de una lista).
+            Cada video es un día. Puedes pegar el enlace del video, o elegirlo de la lista en la
+            página{" "}
+            <Link href="/admin/instagram" className={styles.link}>
+              Instagram
+            </Link>
+            .
           </p>
           <ActionForm action={createDay} submit={`Crear día ${nextDay}`}>
             <div className={styles.row}>
